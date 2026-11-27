@@ -7,3 +7,6 @@ library;
 
 export 'src/engine_client.dart';
 export 'src/engine_isolate.dart';
+export 'src/storage/local_blob_store.dart';
+export 'src/storage/local_database.dart';
+export 'src/storage/message_record.dart';

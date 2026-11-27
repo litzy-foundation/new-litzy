@@ -21,6 +21,12 @@ database remains the index and the authority for which content exists. No
 object store adapter is shipped. The choice between the two local backends
 is a configuration decision and both implement the same port.
 
+The first slice implements the content-addressed folder with verified
+digests and raw bytes. The Zstd binding and the SQLite blob table are
+tracked as the next part of this slice in `roadmap.md`; shipping the store
+without them is a deliberate staging decision, not a change to the chosen
+architecture.
+
 ## Consequences
 
 A user can back up the application by copying one file when the blob table
