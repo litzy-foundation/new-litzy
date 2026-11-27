@@ -7,6 +7,49 @@ sealed class LmlpMessage {
   const LmlpMessage();
 }
 
+/// An immutable message payload shared by every front-end and the engine.
+final class MessageData {
+  /// Creates a message payload with its indexing and content fields.
+  const MessageData({
+    required this.id,
+    required this.listId,
+    required this.subject,
+    required this.fromAddress,
+    required this.dateEpoch,
+    required this.parentId,
+    required this.threadRootId,
+    required this.body,
+    required this.checksum,
+  });
+
+  /// Stable message identifier.
+  final String id;
+
+  /// Identifier of the list or channel that delivered the message.
+  final String listId;
+
+  /// Subject line.
+  final String subject;
+
+  /// Address of the author.
+  final String fromAddress;
+
+  /// Message date in epoch seconds.
+  final int dateEpoch;
+
+  /// Identifier of the parent message, or null for a root.
+  final String? parentId;
+
+  /// Identifier of the thread root.
+  final String threadRootId;
+
+  /// Raw message body.
+  final String body;
+
+  /// SHA-256 digest of the raw source.
+  final String checksum;
+}
+
 /// A typed instruction sent by a front-end to the engine.
 sealed class LmlpRequest extends LmlpMessage {
   /// Creates a request with the identifier used to match its response.
@@ -26,6 +69,45 @@ final class PingRequest extends LmlpRequest {
 final class ShutdownRequest extends LmlpRequest {
   /// Creates a shutdown request with the given identifier.
   const ShutdownRequest(super.id);
+}
+
+/// Opens the local profile before any data operation.
+final class OpenProfileRequest extends LmlpRequest {
+  /// Creates a request for the database at [databasePath].
+  const OpenProfileRequest(super.id, this.databasePath);
+
+  /// Path of the SQLite database to open.
+  final String databasePath;
+}
+
+/// Persists one batch of messages in the open profile.
+final class IngestRequest extends LmlpRequest {
+  /// Creates an ingest request for [listId] with immutable [messages].
+  const IngestRequest(super.id, this.listId, this.messages);
+
+  /// Identifier of the source list.
+  final String listId;
+
+  /// Messages to persist atomically.
+  final List<MessageData> messages;
+}
+
+/// Searches subjects and bodies through the local full-text index.
+final class SearchRequest extends LmlpRequest {
+  /// Creates a search request for [terms].
+  const SearchRequest(super.id, this.terms);
+
+  /// Full-text query terms.
+  final String terms;
+}
+
+/// Reads one thread in pre-order from the open profile.
+final class ThreadRequest extends LmlpRequest {
+  /// Creates a request for the thread rooted at [rootId].
+  const ThreadRequest(super.id, this.rootId);
+
+  /// Identifier of the thread root.
+  final String rootId;
 }
 
 /// A typed answer sent by the engine for one request identifier.
@@ -59,6 +141,33 @@ final class ErrorResponse extends LmlpResponse {
 
   /// Human-readable explanation of the failure.
   final String message;
+}
+
+/// Reports how many messages were persisted by an ingest request.
+final class IngestResponse extends LmlpResponse {
+  /// Creates an ingest response with the persisted [count].
+  const IngestResponse(super.id, this.count);
+
+  /// Number of persisted messages.
+  final int count;
+}
+
+/// Returns the message identifiers matching a full-text query.
+final class SearchResponse extends LmlpResponse {
+  /// Creates a search response with the matching [messageIds].
+  const SearchResponse(super.id, this.messageIds);
+
+  /// Identifiers of the matching messages.
+  final List<String> messageIds;
+}
+
+/// Returns the messages of one thread in pre-order.
+final class ThreadResponse extends LmlpResponse {
+  /// Creates a thread response with its ordered [messages].
+  const ThreadResponse(super.id, this.messages);
+
+  /// Messages in pre-order.
+  final List<MessageData> messages;
 }
 
 /// A typed notification pushed by the engine without a request.
