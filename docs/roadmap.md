@@ -133,6 +133,14 @@ Build the CLI as a thin front-end over the typed bus, exposing sync, triage,
 read, reply and audit. Acceptance tests use the real binary and the real
 database.
 
+Partially landed: the `litzy` binary parses arguments, opens a profile and
+sends typed ping, sync, search and thread requests through a real engine
+isolate. Each invocation prints structured JSON and closes its isolate, so no
+engine state survives between processes. Acceptance tests drive the binary
+with a local NNTP fixture and check that a channel synced in one process can
+be searched and read in the next. Still to do: triage, reply, audit and the
+local import commands.
+
 ## S6 — Flutter GUI
 
 Build the adaptive master-detail GUI on desktop and mobile, using the same
