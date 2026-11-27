@@ -64,12 +64,14 @@ questions section of this file and close only with a recorded decision.
 Every slice ends with a review that asks whether it can be done better.
 Refactoring is encouraged while the suite stays green.
 
-## R9 — Environment-driven configuration
+## R9 — Environment-driven configuration, superseded by R37
 
-No credential appears in source, tests or versioned files. Configuration
-arrives from `LITZY_*` environment variables, optionally loaded from a
-git-ignored root `.env`, and `.env.example` documents every variable with a
-placeholder. Non-secret defaults such as local ports are allowed.
+The original rule kept credentials out of source and versioned files, and
+supplied configuration through `LITZY_*` environment variables loaded from a
+git-ignored root `.env`, with `.env.example` documenting the variables.
+The maintainer has since decided that the application, not an environment
+file, manages credentials. This wording is preserved as history and is
+superseded by R37 for every secret and for the whole configuration flow.
 
 ## R10 — Email provider agnosticism
 
@@ -298,6 +300,23 @@ does not claim human authorship or turn into a long narrative. The human
 maintainer may expand the body during review. The rule is recorded in the
 pull request template under `.github`, in `CONTRIBUTING.md` and in
 `AGENTS.md`.
+
+## R37 — Configuration and credentials are managed in the app through OAuth
+
+The maintainer stated that a `.env` file would not be used for management
+and that the app should manage everything through OAuth access and other
+secure mechanisms of that kind. Credentials are entered and renewed inside
+Litzy, using the OAuth flow of the provider where the provider supports it.
+Tokens and passwords are stored in the operating system keychain as decided
+in R35, and no `.env` file is part of the repository or of the supported
+configuration flow. A provider without OAuth uses its secure credential
+entry in the app, still kept in the keychain. Continuous integration may
+inject non-secret settings as environment variables, but it never reads a
+`.env` file and never stores a credential in a versioned file.
+
+This decision supersedes the `.env` part of R9. It does not authorise any
+remote service operated by the project, and it leaves R18 unchanged: no
+telemetry, encryption at rest and no token between client and engine.
 
 ## Open questions
 

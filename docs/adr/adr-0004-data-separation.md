@@ -16,10 +16,11 @@ and does not belong in a versioned file.
 Declarative configuration, the list catalogue, rulesets and fixtures live
 as YAML under `data/`, outside the packages. Runtime data such as messages,
 threads, cursors and triage state lives in the local SQLite database.
-Credentials are read from `LITZY_*` environment variables or from the
-operating system keychain. The root `.env` is git-ignored and `.env.example`
-documents the variables with placeholders only. A missing required field in
-a data file is an explicit startup error.
+Credentials are entered in the application through OAuth or a secure
+credential form and are kept in the operating system keychain, as decided
+in R37. No `.env` file is part of the supported configuration flow and no
+credential is versioned. A missing required field in a data file is an
+explicit startup error.
 
 ## Consequences
 
