@@ -3,6 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../storage/local_database.dart';
+import 'public_inbox_client.dart';
+
 /// Reports a failed NNTP command with its status code, or zero for a local
 /// failure such as a timeout.
 final class NntpException implements Exception {
@@ -52,6 +55,26 @@ final class NntpArticle {
 
   /// Body lines without the terminating dot line.
   final List<String> body;
+
+  /// Converts the article to the shared raw message shape.
+  RawMessage toRawMessage() {
+    final headerMap = <String, String>{};
+    for (final line in headers) {
+      final colon = line.indexOf(':');
+      if (colon > 0) {
+        headerMap[line.substring(0, colon).toLowerCase()] = line
+            .substring(colon + 1)
+            .trim();
+      }
+    }
+    final raw = '${headers.join('\n')}\n\n${body.join('\n')}';
+    return RawMessage(
+      headers: headerMap,
+      body: body.join('\n'),
+      raw: raw,
+      checksum: checksumOfBytes(utf8.encode(raw)),
+    );
+  }
 }
 
 /// A minimal RFC 3977 text client for public newsgroups.

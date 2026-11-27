@@ -21,8 +21,9 @@ desktop and mobile. Both expose the same operations, with input and output
 shapes appropriate to their medium. The first verb set makes the boundary
 concrete: the protocol owns the message payload and the request and response
 types, while the engine handler maps them to SQLite records inside the
-isolate. A new operation cannot cross the bus until it has a typed request
-and response.
+isolate. A sync verb selects a catalogue channel and runs the Mode C client
+inside the engine, so neither front-end decides how a list is fetched. A new
+operation cannot cross the bus until it has a typed request and response.
 
 ## Consequences
 

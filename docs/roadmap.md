@@ -92,8 +92,12 @@ Landed: `ChannelMapper` turns a catalogue entry into a runtime channel that
 the raw digest and thread references before writing messages and raw blobs.
 An end-to-end test loads the versioned catalogue, serves an atom feed and a
 gzipped mbox from a local HTTP fixture, and reads the persisted thread and
-search result from the real SQLite database. Still to do: converting NNTP
-articles onto the same ingestion path and exposing sync as a typed engine verb.
+search result from the real SQLite database. A typed `SyncRequest` now refreshes
+a named catalogue channel through either NNTP or public-inbox inside the
+engine isolate, and an NNTP article converts to the same raw message shape.
+Tests drive the real isolate path with local fake servers and check that an
+untrusted list identifier leaves no persisted message. Still to do: incremental
+cursors and an `audit` verb for residual list mail.
 
 ## S4 — Mode B with opt-in purge
 
