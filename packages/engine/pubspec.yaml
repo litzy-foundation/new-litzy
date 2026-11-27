@@ -9,5 +9,6 @@ dependencies:
     path: ../protocol
   crypto: ^3.0.6
   sqlite3: ^2.9.4
+  yaml: ^3.1.4
 dev_dependencies:
   test: ^1.33.0
