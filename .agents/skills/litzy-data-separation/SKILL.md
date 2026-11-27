@@ -9,8 +9,10 @@ Classify a piece of data before creating a file. Declarative data such as
 rules, policies, the source catalogue and fixtures is versioned YAML under
 `data/`. Runtime data such as messages, threads, triage state, cursors and
 search indexes lives in the local SQLite database. Sensitive data such as
-IMAP and SMTP passwords lives in the environment or the operating system
-keychain and never in a versioned file.
+OAuth tokens and IMAP or SMTP passwords is acquired inside the app through
+OAuth or a secure credential form and lives in the operating system keychain,
+as required by R37. No `.env` file is used for management and no secret is
+versioned.
 
 Files under `data/` are pure data with no logic, no imports and no secrets.
 A missing required field is an explicit startup error. The catalogue lives
