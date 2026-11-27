@@ -1,0 +1,9 @@
+// Copyright (c) 2026 Alessio Attilio and the litzy contributors
+/// The embedded engine and the client that starts it on a separate isolate.
+///
+/// R14 requires the engine to live inside the client process, and ADR-0003
+/// requires every exchange with it to use typed LMLP messages.
+library;
+
+export 'src/engine_client.dart';
+export 'src/engine_isolate.dart';
