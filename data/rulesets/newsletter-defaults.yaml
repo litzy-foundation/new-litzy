@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Default classification rules for newsletters and feeds. Implements R19.
+
+version: 1
+
+defaults:
+  channel_kind: newsletter
+  trust: unverified_until_list_id_present
+  retention_days: 180
+
+rules:
+  - id: has_list_id
+    header: List-Id
+    action: trust_as_mailing_list
+  - id: has_feed_marker
+    header: X-Litzy-Source
+    value_prefix: feed:
+    action: classify_as_feed_item
+  - id: bulk_but_unverified
+    header: Precedence
+    value: bulk
+    action: quarantine_for_review

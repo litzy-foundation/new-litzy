@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Declarative catalogue of public lists reachable without an email account.
+# Implements R24 and ADR-0009.
+
+version: 1
+
+sources:
+  - id: git
+    label: Git development list
+    list_id: git@vger.kernel.org
+    protocols:
+      nntp:
+        host: nntp.lore.kernel.org
+        port: 119
+        newsgroup: lore.git
+        tls: false
+      public_inbox:
+        base_url: https://lore.kernel.org/git/
+        atom_path: new.atom
+        thread_path_suffix: /t.mbox.gz
+    trust: verified_by_list_id
+
+  - id: linux-kernel
+    label: Linux kernel development list
+    list_id: linux-kernel@vger.kernel.org
+    protocols:
+      nntp:
+        host: nntp.lore.kernel.org
+        port: 119
+        newsgroup: lore.linux-kernel
+        tls: false
+      public_inbox:
+        base_url: https://lore.kernel.org/linux-kernel/
+        atom_path: new.atom
+        thread_path_suffix: /t.mbox.gz
+    trust: verified_by_list_id
+
+  - id: debian-devel
+    label: Debian developers list
+    list_id: debian-devel@lists.debian.org
+    protocols:
+      public_inbox:
+        base_url: https://lists.debian.org/debian-devel/
+        atom_path: new.atom
+        thread_path_suffix: /t.mbox.gz
+    trust: verified_by_list_id
+
+  - id: pgsql-hackers
+    label: PostgreSQL hackers list
+    list_id: pgsql-hackers@lists.postgresql.org
+    protocols:
+      public_inbox:
+        base_url: https://www.postgresql.org/message-id/
+        atom_path: atom
+        thread_path_suffix: /t.mbox.gz
+    trust: verified_by_list_id

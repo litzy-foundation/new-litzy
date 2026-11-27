@@ -1,0 +1,29 @@
+# ADR-0004: Data separated from code
+
+## Status
+
+Accepted on 2026-11-28. This decision implements R2 and R9.
+
+## Context
+
+The maintainer requires that declarative data stay out of Dart source and
+that no secret be versioned. A local YAML source catalogue is needed for
+Mode C, along with rulesets and fixtures. Runtime state changes constantly
+and does not belong in a versioned file.
+
+## Decision
+
+Declarative configuration, the list catalogue, rulesets and fixtures live
+as YAML under `data/`, outside the packages. Runtime data such as messages,
+threads, cursors and triage state lives in the local SQLite database.
+Credentials are read from `LITZY_*` environment variables or from the
+operating system keychain. The root `.env` is git-ignored and `.env.example`
+documents the variables with placeholders only. A missing required field in
+a data file is an explicit startup error.
+
+## Consequences
+
+Catalogue changes are reviewable in pull requests without touching code.
+Tests can use named fixtures instead of inline strings. Secrets never enter
+the repository. A small amount of validation code is needed at startup to
+check the YAML before it reaches the engine.
