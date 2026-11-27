@@ -45,10 +45,18 @@ this bus, and the CLI and GUI clients.
 
 ## S2 — SQLite storage, threading and search
 
-Implement the single local SQLite database with migrations, Drift access,
-recursive thread queries, FTS5 indexing and the compressed blob table or
-content-addressed folder. Tests cover deep threads, concurrent reads and
-atomic backup of the database file.
+Implement the single local SQLite database with migrations, recursive thread
+queries, FTS5 indexing and the local blob backend. Tests cover deep threads,
+bounded recursion, atomic batches, checksum verification and corrupted
+content.
+
+Partially landed: `LocalDatabase` creates the schema, persists batches in a
+single transaction, reads threads with a bounded `WITH RECURSIVE` query,
+searches with FTS5 and exposes a `VACUUM INTO` backup. `LocalBlobStore`
+implements the content-addressed folder and rejects a file whose bytes no
+longer match its digest. Tests are green. Still to do: the SQLite blob table
+with the Zstd binding and the Drift mapping that replaces the direct
+`sqlite3` statements while keeping the same SQL.
 
 ## S3 — Mode C ingestion
 
