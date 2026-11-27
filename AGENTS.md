@@ -17,8 +17,9 @@ remote is `litzy-foundation/new-litzy`, created from zero with the GitHub
 CLI. An agent never commits directly to `main` and never pushes arbitrary
 branches. It works on a topic branch, pushes it to the remote as
 `pr/<number>-<slug>`, and the maintainer merges it
-through a two-parent merge commit whose subject names the pull request. The
-server-side hook enforces this and rejects agent co-author trailers. The
+through a two-parent merge commit whose subject names the pull request.
+GitHub branch protection and the required `pr-guard` status check enforce
+this and reject agent co-author trailers; no server-side hook is used. The
 empty root commit of a new repository is the only direct commit on `main`,
 and it carries no content. The full model is in `docs/repository-security.md`.
 
@@ -34,8 +35,9 @@ Context, Decision and Consequences. Nothing exists only in a conversation.
 
 Documentation is English prose without emoji or decorative markers. Every
 source file carries the notice `Copyright (c) 2026 Alessio Attilio and the
-litzy contributors` verbatim. Secrets come from `LITZY_*` environment
-variables or the operating system keychain, never from a versioned file.
+litzy contributors` verbatim. Secrets enter the app through OAuth or a secure
+credential form and live in the operating system keychain, never in a
+versioned file or a `.env` file.
 
 ## Permanent directives
 
@@ -102,6 +104,8 @@ variables or the operating system keychain, never from a versioned file.
     folder, with no object store.
 31. OS keychain secrets (R35 and R37): `flutter_secure_storage` and libsecret
     hold OAuth tokens and credentials entered in the app.
+32. GitHub-native enforcement (R38): no pre-receive hook; branch protection
+    and the required `pr-guard` status check enforce the pull request flow.
 
 ## Fixed operational rules
 

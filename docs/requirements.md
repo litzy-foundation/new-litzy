@@ -318,6 +318,28 @@ This decision supersedes the `.env` part of R9. It does not authorise any
 remote service operated by the project, and it leaves R18 unchanged: no
 telemetry, encryption at rest and no token between client and engine.
 
+## R38 — GitHub-native enforcement replaces server-side hooks
+
+The maintainer stated that a pre-receive hook will never be used, because a
+public repository on GitHub does not offer that hook, and asked for a
+GitHub-based alternative. Enforcement therefore lives entirely on GitHub.
+Branch protection on `main` requires a pull request, applies to
+administrators, and blocks force pushes and branch deletion. A required
+status check named `pr-guard` comes from a GitHub Actions workflow on every
+pull request. It verifies that the base is `main`, that the head branch is
+named `pr/<number>-<slug>` with the pull request number, that the branch
+carries exactly one commit, that its subject follows Conventional Commits,
+and that no `Co-Authored-By` trailer names an agent, a model, a harness or an
+automation account. A pull request that fails any of these checks cannot be
+merged.
+
+No versioned hook and no installed bare-mirror hook remain in the project.
+The local bare repository is still an offline mirror, but it has no server-side
+policy. This decision supersedes only the hook-based enforcement described in
+R31 and ADR-0001; the pull request rule itself is unchanged. The two-parent
+merge commit whose subject names the pull request remains the historical
+evidence that every change came through a pull request.
+
 ## Open questions
 
 | # | Question | Status |
