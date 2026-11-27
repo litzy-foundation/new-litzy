@@ -62,8 +62,16 @@ backup and is not the history of the rebuilt repository.
 Branch names are `feat/<slice>-<scope>`, `fix/<slice>-<scope>` or
 `docs/<scope>`. Commit messages follow Conventional Commits, for example
 `feat(engine): add typed isolate transport` or `docs: record PR-only rule`.
-Commits are atomic: one concern per commit, with its documentation and tests
-in the same change when the concern is a feature.
+A pull request carries exactly one commit, as required by R36. That commit
+is atomic: its documentation, tests and implementation are one change, and
+no second commit is pushed to fix a review comment. Amend the single commit
+and force push the pull request branch instead.
+
+When an agent opens a pull request, it writes a brief body in the style of
+the foundation pull request: a few sentences stating what the change
+establishes, what it records and what it does not include. It does not write
+a long narrative and it does not claim human authorship. The maintainer may
+expand the body during review. The pull request template carries this rule.
 
 ## Before opening a pull request
 
