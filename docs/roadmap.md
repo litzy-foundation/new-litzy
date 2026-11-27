@@ -72,6 +72,15 @@ or marking as read and archiving. Real `EXPUNGE` is a per-list opt-in behind
 the two-phase commit and SHA-256 check. Tests prove that the default never
 deletes and that the opt-in path deletes only after verification.
 
+## S4a — Secure configuration and OAuth
+
+The maintainer decided that a `.env` file is not used for management and
+that the app manages credentials through OAuth and other secure mechanisms.
+This slice removes `.env.example` from the versioned tree and introduces the
+in-app credential flow with token storage in the operating system keychain.
+Tests will use a fake keychain port and a fake OAuth provider; no real
+credential is stored in the repository or in a test fixture.
+
 ## S5 — Terminal client
 
 Build the CLI as a thin front-end over the typed bus, exposing sync, triage,

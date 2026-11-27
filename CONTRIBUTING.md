@@ -77,10 +77,13 @@ expand the body during review. The pull request template carries this rule.
 
 Documentation comes first or together with the code, as required by R3.
 Any new directive or decision is recorded in `docs/requirements.md` and in
-an ADR before it is implemented. Algorithm and ingestion work follows the
-red, green, refactor cycle. The analyzer must be clean and the formatter
-must report no changes. Targeted tests are run while iterating; the full
-suite runs before the pull request is merged.
+an ADR before it is implemented. No `.env` file is used for configuration or
+credential management, as required by R37: the app manages OAuth and secure
+credential entry and stores tokens in the operating system keychain.
+Algorithm and ingestion work follows the red, green, refactor cycle. The
+analyzer must be clean and the formatter must report no changes. Targeted
+tests are run while iterating; the full suite runs before the pull request
+is merged.
 
 ## Review checklist
 

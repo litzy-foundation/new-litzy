@@ -15,13 +15,15 @@ maintainer chose operating system keychain storage for that material.
 
 ## Decision
 
-Credentials are kept with `flutter_secure_storage` on mobile and with
-libsecret or the native equivalent on desktop. Environment variables remain
-the source for local configuration and continuous integration, and the
-git-ignored `.env` file may supply them during development. No token and no
-mutual TLS certificate is used between the GUI or CLI and the engine. The
-database remains encrypted at rest, and secrets are never written to logs,
-fixtures or versioned files.
+Credentials are obtained through OAuth flows managed by the application, or
+through a secure credential form for providers without OAuth, and are kept
+with `flutter_secure_storage` on mobile and with libsecret or the native
+equivalent on desktop. No `.env` file is used for management, as required by
+R37. Non-secret settings may be supplied by the application interface or by
+injected environment variables in continuous integration, never by a
+versioned file. No token and no mutual TLS certificate is used between the
+GUI or CLI and the engine. The database remains encrypted at rest, and
+secrets are never written to logs, fixtures or versioned files.
 
 ## Consequences
 

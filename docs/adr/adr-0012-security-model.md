@@ -14,9 +14,10 @@ The maintainer requires maximum security with no leaks of data or memory.
 ## Decision
 
 The SQLite database is encrypted at rest with a key derived by Argon2id and
-used with AES-256-GCM. The key is never logged or stored in clear. IMAP and
-SMTP credentials live in the operating system keychain as decided in
-ADR-0007. There is no telemetry and no third-party analytics. Outbound
+used with AES-256-GCM. The key is never logged or stored in clear. OAuth
+tokens and other credentials are acquired inside the app and live in the
+operating system keychain as decided in ADR-0007 and R37. There is no
+telemetry and no third-party analytics. Outbound
 traffic occurs only to sources and destinations the user configured.
 Untrusted input such as MIME bodies, Atom feeds and mbox archives is parsed
 behind strict size and depth limits, with sanitised rendering. Secrets are

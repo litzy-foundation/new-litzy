@@ -53,6 +53,17 @@ longer exists. Status: addressed by design in R35 and ADR-0007. Evidence:
 secrets come from environment variables and the operating system keychain,
 and no token or mutual TLS is used between client and engine.
 
+## P8 — Environment file as a credential surface
+
+The first design loaded credentials from a root `.env` documented by
+`.env.example`. The maintainer stated that management should be done by the
+app through OAuth and other secure mechanisms instead. Status: addressed by
+the decision in R37 and ADR-0007. Evidence: `requirements.md` records the
+supersession of R9, the versioned `.env.example` is removed, and the
+credential flow is tracked in S4a with keychain storage and fake OAuth
+tests. Any local `.env` already on a machine stays there and is git-ignored;
+nothing is removed from the local machine.
+
 ## P7 — Full rebuild without local loss
 
 Recreating the repository from zero must not remove anything from the local

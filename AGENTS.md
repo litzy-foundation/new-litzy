@@ -55,8 +55,9 @@ variables or the operating system keychain, never from a versioned file.
    implementing and keep open questions in the requirements file.
 7. Continuous improvement (R8): close every slice by asking whether it can
    be done better and keep the suite green.
-8. Environment configuration (R9): no plaintext secret in source, tests or
-   versioned files; `.env.example` documents the variables.
+8. In-app secure configuration (R37, superseding the `.env` flow in R9): no
+   `.env` file and no credential in a versioned file; OAuth and secure
+   credential entry are managed by the app and tokens live in the OS keychain.
 9. Provider agnosticism (R10): any RFC-compliant IMAP or SMTP provider works
    without special cases.
 10. English documentation (R11) and pure prose (R28).
@@ -99,8 +100,8 @@ variables or the operating system keychain, never from a versioned file.
 29. Engine package (R33): the engine lives in `packages/engine`.
 30. Local blobs (R34): compressed SQLite blobs or a local content-addressed
     folder, with no object store.
-31. OS keychain secrets (R35): `flutter_secure_storage` and libsecret hold
-    credentials on the user's machine.
+31. OS keychain secrets (R35 and R37): `flutter_secure_storage` and libsecret
+    hold OAuth tokens and credentials entered in the app.
 
 ## Fixed operational rules
 
