@@ -285,6 +285,20 @@ on mobile and libsecret or the equivalent on desktop. With no network
 between client and engine, security protects IMAP and SMTP passwords on the
 user's disk. The decision is in ADR-0007.
 
+## R36 — One commit per pull request, and a brief body from an agent
+
+The maintainer stated that the standard for a pull request is always one
+commit, and then showed the body of the foundation pull request as the style
+they like for an agent: short, concrete and limited to what the change
+establishes, what it records and what it does not include. A topic branch
+therefore carries a single commit with its documentation and tests together,
+and an agent opens the pull request with a brief body in that style. The
+body states the purpose of the slice and its scope in a few sentences; it
+does not claim human authorship or turn into a long narrative. The human
+maintainer may expand the body during review. The rule is recorded in the
+pull request template under `.github`, in `CONTRIBUTING.md` and in
+`AGENTS.md`.
+
 ## Open questions
 
 | # | Question | Status |

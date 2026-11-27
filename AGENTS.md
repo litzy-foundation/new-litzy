@@ -91,7 +91,9 @@ variables or the operating system keychain, never from a versioned file.
     opt-in DKIM and patch or mbox export.
 26. End-to-end acceptance (R27): tests drive the real binary, engine and
     database.
-27. PR-only (R31) and no agent co-authors (R30), as stated above.
+27. PR-only (R31) and no agent co-authors (R30), as stated above. A pull
+   request carries exactly one commit, and an agent writes a brief body that
+   states the purpose and scope of the slice in a few sentences (R36).
 28. Typed in-process bus (R32): LMLP messages cross the UI and engine
     isolates through `SendPort` and `ReceivePort`, never as JSON.
 29. Engine package (R33): the engine lives in `packages/engine`.
