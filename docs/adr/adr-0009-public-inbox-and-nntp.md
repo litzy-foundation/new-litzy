@@ -24,9 +24,9 @@ newsgroups to channels and uses article ranges for incremental fetches. The
 public-inbox adapter reads Atom feeds for discovery and downloads a thread
 as a compressed mbox for complete content. Both sources deliver into the
 same pipeline as Mode B and follow the same trust chain, so a message with
-no verifiable list evidence is tagged `list-id:unverified` rather than
-silently trusted. IMAP and SMTP remain optional and are needed only for
-replying or for private lists.
+no verifiable list evidence is either rejected or tagged `list-id:unverified`
+rather than silently trusted. IMAP and SMTP remain optional and are needed
+only for replying or for private lists.
 
 ## Consequences
 
@@ -40,5 +40,9 @@ input.
 The first implementation ships both clients with bounded requests and typed
 failures. The public-inbox adapter validates atom entries and thread
 identifiers before reading a gzipped mbox, and computes a digest for every
-extracted message. Mapping a catalogue entry to a channel and the end-to-end
-proof through the engine remain in the roadmap.
+extracted message. A catalogue entry maps to a persisted channel, and an
+end-to-end proof reads a thread from a local HTTP fixture through the real
+SQLite database. The first ingestor rejects a message whose List-Id does not
+match the channel, which implements the trust chain more strictly than
+tagging. Converting NNTP articles onto the same path and exposing sync as a
+typed verb remain in the roadmap.

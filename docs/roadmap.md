@@ -87,8 +87,13 @@ identifiers from an atom feed and decompresses a thread mbox into typed
 messages with digests. Failures are explicit types for bad status codes,
 malformed documents, unsafe identifiers and timeouts. Tests drive a local
 fake NNTP server and a local HTTP fixture, and check catalogue validation.
-Still to do: the mapping from a selected list to a channel, and the
-end-to-end proof through the real engine and database.
+Landed: `ChannelMapper` turns a catalogue entry into a runtime channel that
+`LocalDatabase` persists, and `ModeCIngestor` verifies the list identifier,
+the raw digest and thread references before writing messages and raw blobs.
+An end-to-end test loads the versioned catalogue, serves an atom feed and a
+gzipped mbox from a local HTTP fixture, and reads the persisted thread and
+search result from the real SQLite database. Still to do: converting NNTP
+articles onto the same ingestion path and exposing sync as a typed engine verb.
 
 ## S4 — Mode B with opt-in purge
 
