@@ -25,10 +25,11 @@ final class PublicInboxException implements Exception {
 
 /// One message extracted from a public-inbox mbox archive.
 final class RawMessage {
-  /// Creates a message with its header map, body and content digest.
+  /// Creates a message with its headers, body, source and content digest.
   const RawMessage({
     required this.headers,
     required this.body,
+    required this.raw,
     required this.checksum,
   });
 
@@ -38,7 +39,10 @@ final class RawMessage {
   /// Message body without the envelope line or header block.
   final String body;
 
-  /// SHA-256 digest of the full RFC 5322 message.
+  /// Full RFC 5322 message without the mbox envelope line.
+  final String raw;
+
+  /// SHA-256 digest of [raw].
   final String checksum;
 }
 
@@ -158,6 +162,7 @@ final class PublicInboxClient {
     return RawMessage(
       headers: headers,
       body: bodyLines.join('\n'),
+      raw: raw,
       checksum: checksumOfBytes(utf8.encode(raw)),
     );
   }

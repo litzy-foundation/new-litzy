@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'channel_record.dart';
 import 'message_record.dart';
 
 /// The local SQLite store for messages, threads and full-text search.
@@ -69,6 +70,15 @@ final class LocalDatabase {
         quarantined_at INTEGER NOT NULL
       )
     ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS channels (
+        id TEXT PRIMARY KEY,
+        list_id TEXT NOT NULL,
+        label TEXT NOT NULL,
+        protocol TEXT NOT NULL,
+        endpoint TEXT NOT NULL
+      )
+    ''');
     final columns = _database.select('PRAGMA table_info(messages)');
     if (!columns.any((column) => column['name'] == 'quarantined')) {
       _database.execute(
@@ -111,6 +121,51 @@ final class LocalDatabase {
       _database.execute('ROLLBACK');
       rethrow;
     }
+  }
+
+  /// Identifiers of all persisted messages, ordered for stable assertions.
+  List<String> get messageIds {
+    final rows = _database.select('SELECT id FROM messages ORDER BY id');
+    return rows.map((row) => row['id'] as String).toList();
+  }
+
+  /// Stores a selected channel, replacing its previous endpoint.
+  void upsertChannel(ChannelRecord channel) {
+    _database.execute(
+      '''
+      INSERT INTO channels (id, list_id, label, protocol, endpoint)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        list_id = excluded.list_id,
+        label = excluded.label,
+        protocol = excluded.protocol,
+        endpoint = excluded.endpoint
+      ''',
+      [
+        channel.id,
+        channel.listId,
+        channel.label,
+        channel.protocol,
+        channel.endpoint,
+      ],
+    );
+  }
+
+  /// Returns the stored channel with [id], or null when absent.
+  ChannelRecord? channelOf(String id) {
+    final rows = _database.select(
+      'SELECT id, list_id, label, protocol, endpoint FROM channels WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return ChannelRecord(
+      id: row['id'] as String,
+      listId: row['list_id'] as String,
+      label: row['label'] as String,
+      protocol: row['protocol'] as String,
+      endpoint: row['endpoint'] as String,
+    );
   }
 
   /// Returns the verified checksum for [id], or null when absent.
