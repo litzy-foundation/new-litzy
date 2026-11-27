@@ -65,6 +65,14 @@ Implement NNTP and public-inbox clients, the local YAML catalogue under
 use a local NNTP fixture server and a local public-inbox fixture, with an
 end-to-end proof that reads a real thread through the real engine.
 
+Partially landed: `CatalogLoader` validates the versioned YAML catalogue and
+produces typed `ListSource` values; `NntpClient` performs `GROUP`, `XOVER`
+and `ARTICLE` against a real socket with explicit failures on unexpected
+status codes and timeouts. Tests drive a local fake NNTP server and check
+catalogue validation. Still to do: the public-inbox client, the mapping from
+a selected list to a channel, and the end-to-end proof through the real
+engine and database.
+
 ## S4 — Mode B with opt-in purge
 
 Implement IMAP vacuum with the safe default of moving to `Litzy/Ingested`
