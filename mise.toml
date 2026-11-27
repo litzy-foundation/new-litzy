@@ -1,0 +1,5 @@
+[tools]
+dart = "3.14.1"
+
+[env]
+LITZY_LOG_LEVEL = "info"

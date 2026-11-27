@@ -1,0 +1,15 @@
+.dart_tool/
+build/
+.packages
+.pub-cache/
+*.log
+*.patch
+.env
+data/local/
+.litzy-local/
+*.db
+*.db-wal
+*.db-shm
+.idea/
+.vscode/
+.DS_Store
