@@ -1,0 +1,13 @@
+name: cli
+description: Terminal front-end that drives the Litzy engine through typed LMLP verbs.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.1
+dependencies:
+  engine:
+    path: ../engine
+  protocol:
+    path: ../protocol
+dev_dependencies:
+  test: ^1.33.0
