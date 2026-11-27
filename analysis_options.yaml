@@ -14,5 +14,4 @@ linter:
     always_declare_return_types: true
     annotate_overrides: true
     avoid_dynamic_calls: true
-    prefer_final_classes: true
     prefer_const_constructors: true

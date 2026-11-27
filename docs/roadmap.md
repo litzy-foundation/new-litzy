@@ -30,9 +30,18 @@ that closes them.
 
 Create `packages/protocol` with the typed message union and the in-process
 transport built on `SendPort` and `ReceivePort`. Create `packages/engine`
-with the isolate entry point. The GUI and CLI will depend only on the
-protocol. Tests drive the transport across a real isolate and verify that
-requests and replies arrive with their types intact.
+with the isolate entry point. The GUI and CLI depend only on the protocol.
+
+Landed: the workspace has `core`, `protocol` and `engine` packages, a sealed
+LMLP message union with typed requests, responses and events, and
+`InProcessLmlpTransport` with separate request, response and event streams.
+`EngineClient.start` spawns a real isolate and binds the announced receive
+port; a ping and a shutdown both complete through the typed bus. Tests cover
+typed delivery, event typing, timeout on an unanswered request and the real
+isolate round trip. Analysis is clean and all three package suites are green.
+
+Still to do in later slices: the storage and ingestion verbs that will use
+this bus, and the CLI and GUI clients.
 
 ## S2 — SQLite storage, threading and search
 

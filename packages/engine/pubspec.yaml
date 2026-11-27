@@ -1,0 +1,11 @@
+name: engine
+description: Embedded Litzy engine running on a separate Dart isolate.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.1
+dependencies:
+  protocol:
+    path: ../protocol
+dev_dependencies:
+  test: ^1.33.0

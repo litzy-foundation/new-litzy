@@ -1,0 +1,8 @@
+name: core
+description: Domain value types and deterministic result handling for Litzy.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.1
+dev_dependencies:
+  test: ^1.33.0
