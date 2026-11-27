@@ -89,6 +89,18 @@ or marking as read and archiving. Real `EXPUNGE` is a per-list opt-in behind
 the two-phase commit and SHA-256 check. Tests prove that the default never
 deletes and that the opt-in path deletes only after verification.
 
+Partially landed: `PurgeCoordinator` prepares a decision by verifying each
+candidate against the SQLite checksum and the local blob store, quarantines
+doubtful messages in a durable ledger, and records a SHA-256 digest. The
+second phase rechecks that digest and the bytes, then applies the per-list
+policy through a small `MailboxPort`. The default moves to
+`Litzy/Ingested`; the other safe choice marks messages as seen, and real
+expunging requires an explicit per-list opt-in. A consumed preparation cannot
+be replayed and a mailbox failure leaves it retryable. Tests cover all of
+these paths with a fake mailbox. Still to do: the real RFC-compliant IMAP
+client behind `MailboxPort`, and the `audit` verb that reports residual list
+mail.
+
 ## S4a — Secure configuration and OAuth
 
 The maintainer decided that a `.env` file is not used for management and

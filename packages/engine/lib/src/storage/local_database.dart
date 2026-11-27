@@ -36,7 +36,8 @@ final class LocalDatabase {
         parent_id TEXT,
         thread_root_id TEXT NOT NULL,
         body TEXT NOT NULL,
-        checksum TEXT NOT NULL
+        checksum TEXT NOT NULL,
+        quarantined INTEGER NOT NULL DEFAULT 0
       )
     ''');
     _database.execute('''
@@ -47,6 +48,33 @@ final class LocalDatabase {
       CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
       USING fts5(id UNINDEXED, subject, body)
     ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS list_policies (
+        list_id TEXT PRIMARY KEY,
+        action TEXT NOT NULL,
+        folder TEXT NOT NULL
+      )
+    ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS purge_preparations (
+        id TEXT PRIMARY KEY,
+        list_id TEXT NOT NULL,
+        digest TEXT NOT NULL,
+        consumed INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS quarantine_entries (
+        message_id TEXT PRIMARY KEY,
+        quarantined_at INTEGER NOT NULL
+      )
+    ''');
+    final columns = _database.select('PRAGMA table_info(messages)');
+    if (!columns.any((column) => column['name'] == 'quarantined')) {
+      _database.execute(
+        'ALTER TABLE messages ADD COLUMN quarantined INTEGER NOT NULL DEFAULT 0',
+      );
+    }
   }
 
   /// Persists a batch of messages atomically.
@@ -93,6 +121,118 @@ final class LocalDatabase {
     );
     if (rows.isEmpty) return null;
     return rows.first['checksum'] as String;
+  }
+
+  /// Records the mailbox policy chosen for [listId].
+  void setListPolicy(
+    String listId,
+    String action, {
+    String folder = 'Litzy/Ingested',
+  }) {
+    _database.execute(
+      '''
+      INSERT INTO list_policies (list_id, action, folder) VALUES (?, ?, ?)
+      ON CONFLICT(list_id) DO UPDATE SET
+        action = excluded.action, folder = excluded.folder
+      ''',
+      [listId, action, folder],
+    );
+  }
+
+  /// Returns the stored policy action for [listId], or null when unset.
+  String? rawPolicyOf(String listId) {
+    final rows = _database.select(
+      'SELECT action FROM list_policies WHERE list_id = ?',
+      [listId],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['action'] as String;
+  }
+
+  /// Returns the destination folder for [listId], or null when unset.
+  String? policyFolderOf(String listId) {
+    final rows = _database.select(
+      'SELECT folder FROM list_policies WHERE list_id = ?',
+      [listId],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['folder'] as String;
+  }
+
+  /// Records the digest prepared for [id] before any mailbox action.
+  ///
+  /// A decision identifier is single use, so an existing record is kept.
+  void recordPreparation(String id, String listId, String digest) {
+    _database.execute(
+      '''INSERT OR IGNORE INTO purge_preparations
+         (id, list_id, digest) VALUES (?, ?, ?)''',
+      [id, listId, digest],
+    );
+  }
+
+  /// Returns the recorded digest for [id], or null when absent.
+  String? preparationDigestOf(String id) {
+    final rows = _database.select(
+      'SELECT digest FROM purge_preparations WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['digest'] as String;
+  }
+
+  /// Whether the preparation for [id] has already been consumed.
+  bool isPreparationConsumed(String id) {
+    final rows = _database.select(
+      'SELECT consumed FROM purge_preparations WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return false;
+    return (rows.first['consumed'] as int) == 1;
+  }
+
+  /// Marks the preparation for [id] consumed after a successful action.
+  void consumePreparation(String id) {
+    _database.execute(
+      'UPDATE purge_preparations SET consumed = 1 WHERE id = ?',
+      [id],
+    );
+  }
+
+  /// Records doubtful messages in the quarantine ledger.
+  ///
+  /// A candidate that has no persisted row is still recorded, so it can never
+  /// be mistaken for one that passed verification.
+  void quarantine(List<String> ids) {
+    if (ids.isEmpty) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    _database.execute('BEGIN IMMEDIATE');
+    try {
+      final update = _database.prepare(
+        'UPDATE messages SET quarantined = 1 WHERE id = ?',
+      );
+      final insert = _database.prepare(
+        '''INSERT OR IGNORE INTO quarantine_entries
+           (message_id, quarantined_at) VALUES (?, ?)''',
+      );
+      for (final id in ids) {
+        update.execute([id]);
+        insert.execute([id, now]);
+      }
+      update.dispose();
+      insert.dispose();
+      _database.execute('COMMIT');
+    } catch (_) {
+      _database.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
+  /// Identifiers recorded in the quarantine ledger.
+  List<String> get quarantinedIds {
+    final rows = _database.select(
+      'SELECT message_id FROM quarantine_entries ORDER BY message_id',
+    );
+    return rows.map((row) => row['message_id'] as String).toList();
   }
 
   /// Reads a whole thread in pre-order with a bounded recursive query.

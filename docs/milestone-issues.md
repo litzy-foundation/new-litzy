@@ -21,8 +21,8 @@ part of the shipped history.
 Deleting thousands of messages from a user's personal account on first sync
 would be unacceptable, especially across multiple devices. Status:
 addressed by design in R15 and ADR-0008. Evidence: the default policy never
-deletes, `EXPUNGE` is opt-in per list, and tests will prove both paths in
-S4.
+deletes, `EXPUNGE` is opt-in per list, and `purge_test.dart` proves both
+paths together with the digest gate, quarantine and replay protection.
 
 ## P3 — Infrastructure cost and protocol surface
 
