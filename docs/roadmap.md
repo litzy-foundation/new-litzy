@@ -49,8 +49,14 @@ port; a ping and a shutdown both complete through the typed bus. Tests cover
 typed delivery, event typing, timeout on an unanswered request and the real
 isolate round trip. Analysis is clean and all three package suites are green.
 
-Still to do in later slices: the storage and ingestion verbs that will use
-this bus, and the CLI and GUI clients.
+Landed in a later slice: typed verbs open a local profile, ingest a batch,
+search with FTS5 and read a thread through the real isolate.
+`EngineRequestHandler` answers the sealed request union with typed responses
+and deterministic error codes for an invalid path, a closed profile, an empty
+batch and a failed write. Tests drive the isolate and the SQLite database
+together, and check that a duplicate message leaves no partial persistence.
+Still to do: the purge and ingestion verbs on the bus, and the CLI and GUI
+clients.
 
 ## S2 — SQLite storage, threading and search
 

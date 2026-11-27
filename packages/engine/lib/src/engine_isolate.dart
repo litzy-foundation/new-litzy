@@ -3,6 +3,8 @@ import 'dart:isolate';
 
 import 'package:protocol/protocol.dart';
 
+import 'request_handler.dart';
+
 /// Entry point of the engine isolate.
 ///
 /// It announces its receive port through an [EngineReadyEvent], then answers
@@ -14,13 +16,12 @@ void engineIsolateEntry(SendPort uiPort) {
     sendPort: uiPort,
     receivePort: receivePort,
   );
-  transport.requests.listen((request) {
-    switch (request) {
-      case PingRequest():
-        transport.send(PongResponse(request.id));
-      case ShutdownRequest():
-        transport.send(AckResponse(request.id));
-        transport.close();
+  final handler = EngineRequestHandler();
+  transport.requests.listen((request) async {
+    final response = await handler.handle(request);
+    transport.send(response);
+    if (request is ShutdownRequest) {
+      transport.close();
     }
   });
 }

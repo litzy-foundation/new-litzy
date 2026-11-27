@@ -18,7 +18,11 @@ Each starts the engine isolate and exchanges typed LMLP messages with it.
 No feature is implemented in a front-end when it belongs to the engine.
 The CLI is scriptable and keyboard-first, and the GUI is adaptive across
 desktop and mobile. Both expose the same operations, with input and output
-shapes appropriate to their medium.
+shapes appropriate to their medium. The first verb set makes the boundary
+concrete: the protocol owns the message payload and the request and response
+types, while the engine handler maps them to SQLite records inside the
+isolate. A new operation cannot cross the bus until it has a typed request
+and response.
 
 ## Consequences
 
