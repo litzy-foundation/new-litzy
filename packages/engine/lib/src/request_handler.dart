@@ -1,6 +1,10 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
+import 'dart:io';
+
 import 'package:protocol/protocol.dart';
 
+import 'ingestion/mode_c_sync_service.dart';
+import 'storage/local_blob_store.dart';
 import 'storage/local_database.dart';
 import 'storage/message_record.dart';
 
@@ -10,6 +14,7 @@ import 'storage/message_record.dart';
 /// must be answered here before it can cross the isolate boundary.
 final class EngineRequestHandler {
   LocalDatabase? _database;
+  LocalBlobStore? _blobs;
 
   /// Answers [request] with a typed response or a deterministic error.
   Future<LmlpResponse> handle(LmlpRequest request) async {
@@ -21,6 +26,8 @@ final class EngineRequestHandler {
         return AckResponse(request.id);
       case OpenProfileRequest():
         return _open(request);
+      case SyncRequest():
+        return _sync(request);
       case IngestRequest():
         return _ingest(request);
       case SearchRequest():
@@ -40,6 +47,11 @@ final class EngineRequestHandler {
     }
     _close();
     try {
+      final blobsDirectory =
+          request.blobsDirectory ??
+          '${File(request.databasePath).parent.path}'
+              '${Platform.pathSeparator}blobs';
+      _blobs = LocalBlobStore(Directory(blobsDirectory));
       _database = LocalDatabase.open(request.databasePath);
     } catch (_) {
       return ErrorResponse(
@@ -49,6 +61,24 @@ final class EngineRequestHandler {
       );
     }
     return AckResponse(request.id);
+  }
+
+  Future<LmlpResponse> _sync(SyncRequest request) async {
+    final database = _database;
+    final blobs = _blobs;
+    if (database == null || blobs == null) return _notOpen(request.id);
+    try {
+      return await ModeCSyncService(
+        database: database,
+        blobs: blobs,
+      ).sync(request.id, request.cataloguePath, request.sourceId);
+    } catch (error) {
+      return ErrorResponse(
+        request.id,
+        'sync_failed',
+        'the channel could not be refreshed: $error',
+      );
+    }
   }
 
   LmlpResponse _ingest(IngestRequest request) {
@@ -141,6 +171,7 @@ final class EngineRequestHandler {
   void _close() {
     final database = _database;
     _database = null;
+    _blobs = null;
     database?.close();
   }
 }

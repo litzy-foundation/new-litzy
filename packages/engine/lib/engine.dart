@@ -12,6 +12,7 @@ export 'src/ingestion/channel_mapper.dart';
 export 'src/ingestion/mailbox_action.dart';
 export 'src/ingestion/mailbox_port.dart';
 export 'src/ingestion/mode_c_ingestor.dart';
+export 'src/ingestion/mode_c_sync_service.dart';
 export 'src/ingestion/nntp_client.dart';
 export 'src/ingestion/public_inbox_client.dart';
 export 'src/ingestion/purge_coordinator.dart';

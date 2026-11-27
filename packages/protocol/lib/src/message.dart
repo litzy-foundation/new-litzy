@@ -74,10 +74,28 @@ final class ShutdownRequest extends LmlpRequest {
 /// Opens the local profile before any data operation.
 final class OpenProfileRequest extends LmlpRequest {
   /// Creates a request for the database at [databasePath].
-  const OpenProfileRequest(super.id, this.databasePath);
+  ///
+  /// The optional [blobsDirectory] overrides the sibling folder used for raw
+  /// message content. Front-ends never handle message bytes themselves.
+  const OpenProfileRequest(super.id, this.databasePath, {this.blobsDirectory});
 
   /// Path of the SQLite database to open.
   final String databasePath;
+
+  /// Optional folder for raw message content.
+  final String? blobsDirectory;
+}
+
+/// Refreshes one catalogue channel using its declared Mode C protocol.
+final class SyncRequest extends LmlpRequest {
+  /// Creates a sync request for [sourceId] in the catalogue at [cataloguePath].
+  const SyncRequest(super.id, this.cataloguePath, this.sourceId);
+
+  /// Path of the declarative source catalogue.
+  final String cataloguePath;
+
+  /// Stable identifier of the source to refresh.
+  final String sourceId;
 }
 
 /// Persists one batch of messages in the open profile.
@@ -159,6 +177,18 @@ final class SearchResponse extends LmlpResponse {
 
   /// Identifiers of the matching messages.
   final List<String> messageIds;
+}
+
+/// Reports the channel and message count produced by a sync request.
+final class SyncResponse extends LmlpResponse {
+  /// Creates a sync response for [channelId] with [count] messages.
+  const SyncResponse(super.id, this.channelId, this.count);
+
+  /// Identifier of the refreshed channel.
+  final String channelId;
+
+  /// Number of messages persisted by the refresh.
+  final int count;
 }
 
 /// Returns the messages of one thread in pre-order.
