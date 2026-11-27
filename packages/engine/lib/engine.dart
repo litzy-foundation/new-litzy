@@ -11,6 +11,7 @@ export 'src/ingestion/catalog.dart';
 export 'src/ingestion/mailbox_action.dart';
 export 'src/ingestion/mailbox_port.dart';
 export 'src/ingestion/nntp_client.dart';
+export 'src/ingestion/public_inbox_client.dart';
 export 'src/ingestion/purge_coordinator.dart';
 export 'src/storage/local_blob_store.dart';
 export 'src/storage/local_database.dart';

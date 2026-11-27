@@ -36,3 +36,9 @@ lists arrive as reviewable YAML changes. The engine gains two network
 clients that must be bounded and tested against local fixture servers, and
 compressed mbox parsing must be hardened because it consumes untrusted
 input.
+
+The first implementation ships both clients with bounded requests and typed
+failures. The public-inbox adapter validates atom entries and thread
+identifiers before reading a gzipped mbox, and computes a digest for every
+extracted message. Mapping a catalogue entry to a channel and the end-to-end
+proof through the engine remain in the roadmap.

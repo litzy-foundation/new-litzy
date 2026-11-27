@@ -76,11 +76,13 @@ end-to-end proof that reads a real thread through the real engine.
 
 Partially landed: `CatalogLoader` validates the versioned YAML catalogue and
 produces typed `ListSource` values; `NntpClient` performs `GROUP`, `XOVER`
-and `ARTICLE` against a real socket with explicit failures on unexpected
-status codes and timeouts. Tests drive a local fake NNTP server and check
-catalogue validation. Still to do: the public-inbox client, the mapping from
-a selected list to a channel, and the end-to-end proof through the real
-engine and database.
+and `ARTICLE` against a real socket; `PublicInboxClient` reads recent thread
+identifiers from an atom feed and decompresses a thread mbox into typed
+messages with digests. Failures are explicit types for bad status codes,
+malformed documents, unsafe identifiers and timeouts. Tests drive a local
+fake NNTP server and a local HTTP fixture, and check catalogue validation.
+Still to do: the mapping from a selected list to a channel, and the
+end-to-end proof through the real engine and database.
 
 ## S4 — Mode B with opt-in purge
 

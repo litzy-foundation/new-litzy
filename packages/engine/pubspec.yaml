@@ -7,8 +7,11 @@ environment:
 dependencies:
   protocol:
     path: ../protocol
+  archive: ^3.6.1
   crypto: ^3.0.6
+  http: ^1.6.0
   sqlite3: ^2.9.4
+  xml: ^7.1.0
   yaml: ^3.1.4
 dev_dependencies:
   test: ^1.33.0
