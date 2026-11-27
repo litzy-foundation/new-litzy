@@ -26,6 +26,15 @@ Evidence for this slice is the documentation commit itself, merged into
 register records the issues that motivated the rebuild and the evidence
 that closes them.
 
+## S0a — GitHub-native enforcement, landed
+
+The maintainer decided that a pre-receive hook will never be used and asked
+for a GitHub-based alternative. This slice records R38 and ADR-0014, removes
+the versioned hook, and adds the `pr-guard` workflow. Branch protection on
+`main` requires that check before merging. Evidence is the configuration in
+`docs/repository-security.md` and the check run on every pull request after
+this slice lands.
+
 ## S1 — Engine isolate and typed LMLP transport
 
 Create `packages/protocol` with the typed message union and the in-process

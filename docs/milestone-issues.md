@@ -50,8 +50,9 @@ S2. The old requirement is preserved as history in the requirements file.
 
 Credentials previously had to be protected from a network boundary that no
 longer exists. Status: addressed by design in R35 and ADR-0007. Evidence:
-secrets come from environment variables and the operating system keychain,
-and no token or mutual TLS is used between client and engine.
+secrets enter the app through OAuth or a secure credential form and live in
+the operating system keychain, and no token or mutual TLS is used between
+client and engine.
 
 ## P8 — Environment file as a credential surface
 
@@ -70,3 +71,14 @@ Recreating the repository from zero must not remove anything from the local
 machine. Status: addressed. Evidence: a complete copy of the previous tree
 and git history was created under `/tmp/opencode/litzy-backup` before the
 rebuild, and no remote push was performed.
+
+## P9 — Server-side hook on a public GitHub remote
+
+The rebuilt repository versioned a `pre-receive` hook and installed it in a
+local bare mirror, but the authoritative remote is a public GitHub repository
+where that hook cannot run. The maintainer stated that such a hook will never
+be used and asked for a GitHub-based alternative. Status: addressed by R38
+and ADR-0014. Evidence: the versioned hook is removed from the tree, the
+installed mirror hook is moved to the existing local backup rather than
+deleted, and the `pr-guard` workflow plus branch protection enforce the pull
+request rules on GitHub. The mirror remains an offline copy without policy.

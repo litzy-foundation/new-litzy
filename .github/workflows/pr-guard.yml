@@ -1,0 +1,64 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+name: pr-guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: pr-guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check the pull request flow
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COMMITS: ${{ github.event.pull_request.commits }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          if [ "$BASE_REF" != "main" ]; then
+            echo "A pull request must target main."
+            exit 1
+          fi
+
+          prefix="pr/${PR_NUMBER}-"
+          if [[ "$HEAD_REF" != "$prefix"* ]]; then
+            echo "The head branch must be named ${prefix}<slug>."
+            exit 1
+          fi
+
+          if [ "$COMMITS" -ne 1 ]; then
+            echo "A pull request must carry exactly one commit."
+            exit 1
+          fi
+
+          git fetch --no-tags origin "$HEAD_REF"
+          if [ "$(git rev-parse FETCH_HEAD)" != "$HEAD_SHA" ]; then
+            echo "The branch moved after the pull request event."
+            exit 1
+          fi
+
+          subject=$(git log -1 --format=%s FETCH_HEAD)
+          pattern='^(feat|fix|docs|chore|refactor|test|build|ci|perf|style)(\([^)]+\))?!?: .+'
+          if [[ ! "$subject" =~ $pattern ]]; then
+            echo "The commit subject must follow Conventional Commits."
+            exit 1
+          fi
+
+          if git log -1 --format=%B FETCH_HEAD | grep -iE '^Co-Authored-By:.*(mistral|vibe@mistral|opencode|open.?code|claude|copilot|codex|agent|assistant|automation)'; then
+            echo "An agent must not be named as a co-author."
+            exit 1
+          fi
+
+          echo "The pull request flow is respected."

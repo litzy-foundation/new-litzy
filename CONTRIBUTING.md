@@ -33,10 +33,11 @@ with the GitHub CLI. It has a local bare mirror for offline work. A
 contributor pushes a finished topic branch to the remote as
 `pr/<number>-<slug>` and opens a pull request. After review the maintainer
 merges it into `main` with a merge commit. GitHub branch protection rejects
-direct writes to `main`, force pushes and deletions, while the versioned
-hook in `hooks/pre-receive` enforces the same model in the mirror and
-rejects agent co-author trailers. The rules and the commands are in
-`docs/repository-security.md`.
+direct writes to `main`, force pushes and deletions. The required `pr-guard`
+status check runs on every pull request and rejects a wrong base, a wrong
+branch name, more than one commit, a non-conventional subject or an agent
+co-author trailer. No server-side hook is used, as required by R38. The rules
+and the commands are in `docs/repository-security.md`.
 
 That merge history is the evidence of the workflow and is preserved. Review
 happens before the merge, and it covers the requirements, the docs, the
