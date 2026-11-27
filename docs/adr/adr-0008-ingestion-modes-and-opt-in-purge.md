@@ -34,3 +34,10 @@ protected by the same transaction that already made the pipeline durable.
 The implementation needs a per-list policy in configuration, a folder
 creation step, and tests that prove the default never deletes while the
 opt-in deletes only after verification.
+
+The first implementation keeps policies and preparations in the local SQLite
+database, uses `MailboxPort` as the boundary to a mailbox, and quarantines
+doubtful messages in a durable ledger. A SHA-256 digest binds the accepted
+candidates to a preparation; the second phase recomputes it and rechecks the
+stored bytes before any mailbox action. A real IMAP client and the `audit`
+verb remain to be added behind the same boundary.
