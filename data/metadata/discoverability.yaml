@@ -1,0 +1,25 @@
+version: 1
+description: >-
+  Litzy is a local-first mailing list reader for technical communities.
+  It follows public lists through lore.kernel.org and NNTP without an
+  account, keeps threads and full-text indexes on your device, and stores
+  raw messages in a local content-addressed folder. The terminal and
+  desktop clients share one embedded engine, with no server, telemetry or
+  cloud account required.
+topics:
+  - local-first
+  - mailing-list-reader
+  - offline-first
+  - technical-email
+  - nntp
+  - public-inbox
+  - lore-kernel
+  - git
+  - threaded-conversation
+  - dart
+  - flutter
+  - sqlite
+  - fts5
+  - privacy
+  - no-telemetry
+  - developer-tools

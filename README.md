@@ -58,5 +58,12 @@ bootstrap` from the repository root, then `dart run melos run analyze` and
 ## Documentation
 
 Start from `docs/requirements.md` for the permanent directives,
-`docs/architecture.md` for the shape of the system, `docs/lmlp-protocol.md`
-for the typed bus and `docs/roadmap.md` for the current work.
+`docs/architecture.md` for the shape of the system, `docs/engine-contract.md`
+for the local engine interface and `docs/roadmap.md` for the current work.
+
+## Discoverability
+
+The public description and the discovery topics are defined in
+`data/metadata/discoverability.yaml`. They describe the local-first reader as
+it exists today and make no claim about planned features. The same file is the
+source for the repository description and topics.
