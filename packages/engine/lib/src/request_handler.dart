@@ -10,9 +10,9 @@ import 'ingestion/local_mail_parser.dart';
 import 'ingestion/mode_b_sync_service.dart';
 import 'ingestion/mode_c_sync_service.dart';
 import 'storage/blob_store.dart';
+import 'storage/legacy_blob_migrator.dart';
 import 'storage/local_blob_store.dart';
 import 'storage/local_database.dart';
-import 'storage/sqlite_blob_store.dart';
 import 'storage/message_record.dart';
 
 /// Executes typed LMLP requests against the local profile.
@@ -71,11 +71,10 @@ final class EngineRequestHandler {
           '${File(request.databasePath).parent.path}'
               '${Platform.pathSeparator}blobs';
       final database = LocalDatabase.open(request.databasePath);
+      final blobs = LocalBlobStore(Directory(blobsDirectory));
+      LegacyBlobMigrator(database, blobs).migrate();
       _database = database;
-      _blobs = switch (request.blobBackend) {
-        BlobBackend.folder => LocalBlobStore(Directory(blobsDirectory)),
-        BlobBackend.sqlite => SqliteBlobStore(database),
-      };
+      _blobs = blobs;
     } catch (_) {
       _close();
       return ErrorResponse(

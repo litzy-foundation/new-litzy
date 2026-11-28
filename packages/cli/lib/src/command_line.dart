@@ -109,7 +109,6 @@ final class ParsedCliCommand {
   const ParsedCliCommand({
     this.databasePath,
     this.blobsDirectory,
-    this.blobBackend = BlobBackend.folder,
     required this.command,
   });
 
@@ -118,9 +117,6 @@ final class ParsedCliCommand {
 
   /// Optional folder for raw message content.
   final String? blobsDirectory;
-
-  /// Backend selected for raw message content.
-  final BlobBackend blobBackend;
 
   /// Operation to execute.
   final CliCommand command;
@@ -164,7 +160,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
   }
   final argument = positional.isEmpty ? null : positional.single;
   final blobs = options['blobs'];
-  final backend = _blobBackend(options['blob-backend']);
 
   switch (name) {
     case 'ping':
@@ -174,7 +169,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: const PingCommand(),
       );
     case 'sync':
@@ -192,7 +186,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: SyncCommand(catalogue, source),
       );
     case 'search':
@@ -202,7 +195,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: SearchCommand(argument),
       );
     case 'thread':
@@ -212,7 +204,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: ThreadCommand(argument),
       );
     case 'reply':
@@ -226,7 +217,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: ReplyCommand(argument, body),
       );
     case 'import':
@@ -236,7 +226,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: ImportCommand(argument, _mailImportFormat(options['format'])),
       );
     case 'triage':
@@ -255,7 +244,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: TriageCommand(
           argument,
           read: flags.contains('read')
@@ -281,7 +269,6 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
-        blobBackend: backend,
         command: AuditCommand(snapshot),
       );
     default:
@@ -293,10 +280,4 @@ MailImportFormat _mailImportFormat(String? value) => switch (value) {
   'maildir' => MailImportFormat.maildir,
   'mbox' => MailImportFormat.mbox,
   _ => throw CliUsageException('unknown mail format $value'),
-};
-
-BlobBackend _blobBackend(String? value) => switch (value) {
-  null || 'folder' => BlobBackend.folder,
-  'sqlite' => BlobBackend.sqlite,
-  _ => throw CliUsageException('unknown blob backend $value'),
 };

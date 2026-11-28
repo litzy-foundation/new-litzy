@@ -187,6 +187,19 @@ messages to a content-addressed compressed folder, extracts the schema into
 prove that an existing SQLite blob migrates byte for byte and that two real
 processes can share one profile.
 
+Landed: `protocol` now exposes the pure Dart `LmlpEngine` interface, and
+`EngineClient` implements it through the existing in-process transport. The
+`BlobBackend` selection and `SqliteBlobStore` are removed, while
+`LegacyBlobMigrator` keeps a one-way Zstd decoder so an existing profile can
+move its raw messages into `blobs/ab/cd/<sha256>.eml.gz` before the old table
+is dropped. New writes always go through the gzip folder, and every read
+verifies the SHA-256 digest. The schema lives in `packages/engine/schema.sql`,
+and `LocalDatabase` applies WAL and a five second busy timeout before schema
+access on every open. Tests cover a byte-identical legacy migration, a corrupt
+row that keeps its table, a corrupt gzip file, pragma values on the open
+connection and two separate processes writing to one profile. Analysis is
+clean and all five package suites are green.
+
 ## S14 — Presentation algorithms in core
 
 Restore `JwzThreadBuilder` and `QuoteAndDiffAnalyzer` from the preserved

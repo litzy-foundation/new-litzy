@@ -140,7 +140,7 @@ sources:
     },
   );
 
-  test('the SQLite blob backend keeps one profile file', () async {
+  test('the local blob folder is created by the real binary', () async {
     final harness = _Harness(root);
     addTearDown(harness.close);
     final server = await _startNntpServer();
@@ -162,20 +162,13 @@ sources:
 ''');
 
     final synced = await harness.run([
-      '--blob-backend',
-      'sqlite',
       'sync',
       '--catalogue',
       catalogue.path,
       '--source',
       'git',
     ]);
-    final found = await harness.run([
-      '--blob-backend',
-      'sqlite',
-      'search',
-      'first body line',
-    ]);
+    final found = await harness.run(['search', 'first body line']);
 
     expect(_jsonObject(synced.stdout), {'channelId': 'git', 'count': 1});
     expect(_jsonObject(found.stdout), {
@@ -184,7 +177,7 @@ sources:
     expect(
       Directory('${harness.directory.path}${Platform.pathSeparator}blobs')
           .existsSync(),
-      isFalse,
+      isTrue,
     );
   });
 

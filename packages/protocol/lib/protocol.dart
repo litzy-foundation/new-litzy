@@ -6,5 +6,6 @@
 /// boundary because R32 removes serialisation from that hop.
 library;
 
+export 'src/engine.dart';
 export 'src/message.dart';
 export 'src/transport.dart';

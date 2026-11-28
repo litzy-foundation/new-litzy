@@ -7,7 +7,7 @@ import 'package:protocol/protocol.dart';
 import 'engine_isolate.dart';
 
 /// Starts the engine isolate and exposes the typed bus to a front-end.
-final class EngineClient {
+final class EngineClient implements LmlpEngine {
   EngineClient._(this._transport, this._isolate);
 
   final InProcessLmlpTransport _transport;
@@ -41,7 +41,16 @@ final class EngineClient {
   Future<LmlpResponse> sendRequest(LmlpRequest request) =>
       _transport.sendRequest(request);
 
+  /// Sends a typed request through the local engine interface.
+  @override
+  Future<LmlpResponse> send(LmlpRequest request) => sendRequest(request);
+
+  /// Events emitted by the engine isolate.
+  @override
+  Stream<LmlpEvent> get events => _transport.events;
+
   /// Closes the transport and stops the isolate.
+  @override
   Future<void> close() async {
     _transport.close();
     _isolate.kill();

@@ -7,10 +7,17 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'channel_record.dart';
 import 'message_record.dart';
+import 'schema_file.dart';
+import 'sqlite_settings.dart';
 import 'sync_cursor.dart';
 
-/// A compressed content row with the codec used and the uncompressed size.
-typedef StoredBlob = ({String codec, int size, Uint8List payload});
+/// A row from the retired compressed blob table.
+typedef LegacyBlob = ({
+  String digest,
+  String codec,
+  int size,
+  Uint8List payload,
+});
 
 /// A stored reply draft with its source message and prepared content.
 typedef StoredDraft = ({String messageId, String subject, String body});
@@ -22,6 +29,14 @@ typedef StoredDraft = ({String messageId, String subject, String body});
 /// never based on a half-persisted message.
 final class LocalDatabase {
   LocalDatabase._(this._database) {
+    _database.execute(
+      'PRAGMA ${SqliteSettings.journalModePragma}='
+      '${SqliteSettings.journalMode}',
+    );
+    _database.execute(
+      'PRAGMA ${SqliteSettings.busyTimeoutPragma}='
+      '${SqliteSettings.busyTimeoutMilliseconds}',
+    );
     _migrate();
   }
 
@@ -34,82 +49,22 @@ final class LocalDatabase {
   /// Opens a transient database for tests and isolated algorithms.
   factory LocalDatabase.inMemory() => LocalDatabase._(sqlite3.openInMemory());
 
+  /// Journal mode reported by the open connection.
+  String get journalMode {
+    final rows = _database.select('PRAGMA ${SqliteSettings.journalModePragma}');
+    return rows.single.values.first as String;
+  }
+
+  /// Busy timeout reported by the open connection.
+  int get busyTimeoutMilliseconds {
+    final rows = _database.select('PRAGMA ${SqliteSettings.busyTimeoutPragma}');
+    return rows.single.values.first as int;
+  }
+
   void _migrate() {
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        list_id TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        from_address TEXT NOT NULL,
-        date_epoch INTEGER NOT NULL,
-        parent_id TEXT,
-        thread_root_id TEXT NOT NULL,
-        body TEXT NOT NULL,
-        checksum TEXT NOT NULL,
-        quarantined INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-    _database.execute('''
-      CREATE INDEX IF NOT EXISTS messages_thread
-      ON messages (thread_root_id, parent_id)
-    ''');
-    _database.execute('''
-      CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts
-      USING fts5(id UNINDEXED, subject, body)
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS list_policies (
-        list_id TEXT PRIMARY KEY,
-        action TEXT NOT NULL,
-        folder TEXT NOT NULL
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS purge_preparations (
-        id TEXT PRIMARY KEY,
-        list_id TEXT NOT NULL,
-        digest TEXT NOT NULL,
-        consumed INTEGER NOT NULL DEFAULT 0
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS quarantine_entries (
-        message_id TEXT PRIMARY KEY,
-        quarantined_at INTEGER NOT NULL
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS blobs (
-        digest TEXT PRIMARY KEY,
-        codec TEXT NOT NULL,
-        size INTEGER NOT NULL,
-        payload BLOB NOT NULL
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS sync_cursors (
-        channel_id TEXT PRIMARY KEY,
-        cursor TEXT NOT NULL
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS drafts (
-        id TEXT PRIMARY KEY,
-        message_id TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        body TEXT NOT NULL,
-        created_at INTEGER NOT NULL
-      )
-    ''');
-    _database.execute('''
-      CREATE TABLE IF NOT EXISTS channels (
-        id TEXT PRIMARY KEY,
-        list_id TEXT NOT NULL,
-        label TEXT NOT NULL,
-        protocol TEXT NOT NULL,
-        endpoint TEXT NOT NULL
-      )
-    ''');
+    for (final statement in SchemaFile.statements()) {
+      _database.execute(statement);
+    }
     final columns = _database
         .select('PRAGMA table_info(messages)')
         .map((row) => row['name'] as String)
@@ -292,31 +247,36 @@ final class LocalDatabase {
     );
   }
 
-  /// Stores a compressed blob once, keyed by its uncompressed digest.
-  void putBlob(String digest, String codec, int size, List<int> payload) {
-    _database.execute(
-      '''
-      INSERT OR IGNORE INTO blobs (digest, codec, size, payload)
-      VALUES (?, ?, ?, ?)
-      ''',
-      [digest, codec, size, Uint8List.fromList(payload)],
-    );
+  /// Whether an older profile still has the retired blob table.
+  bool hasLegacyBlobs() => _tableNames().contains('blobs');
+
+  /// Returns the rows that still need migration to the blob folder.
+  List<LegacyBlob> legacyBlobs() {
+    if (!hasLegacyBlobs()) return const [];
+    return _database
+        .select('SELECT digest, codec, size, payload FROM blobs')
+        .map(
+          (row) => (
+            digest: row['digest'] as String,
+            codec: row['codec'] as String,
+            size: row['size'] as int,
+            payload: row['payload'] as Uint8List,
+          ),
+        )
+        .toList(growable: false);
   }
 
-  /// Returns the stored blob for [digest], or null when absent.
-  StoredBlob? blobOf(String digest) {
-    final rows = _database.select(
-      'SELECT codec, size, payload FROM blobs WHERE digest = ?',
-      [digest],
-    );
-    if (rows.isEmpty) return null;
-    final row = rows.first;
-    return (
-      codec: row['codec'] as String,
-      size: row['size'] as int,
-      payload: row['payload'] as Uint8List,
-    );
+  /// Removes the retired blob table after a verified migration.
+  void dropLegacyBlobs() {
+    if (hasLegacyBlobs()) {
+      _database.execute('DROP TABLE blobs');
+    }
   }
+
+  Set<String> _tableNames() => _database
+      .select("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .map((row) => row['name'] as String)
+      .toSet();
 
   /// Stores the incremental cursor for [channelId].
   void setCursor(String channelId, SyncCursor cursor) {

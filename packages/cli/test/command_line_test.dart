@@ -177,33 +177,6 @@ void main() {
     );
   });
 
-  test('the SQLite blob backend is selected by an option', () {
-    final parsed = parseCommandLine([
-      '--database',
-      'p.db',
-      '--blob-backend',
-      'sqlite',
-      'search',
-      'terms',
-    ]);
-
-    expect(parsed.blobBackend, BlobBackend.sqlite);
-  });
-
-  test('an unknown blob backend is rejected', () {
-    expect(
-      () => parseCommandLine([
-        '--database',
-        'p.db',
-        '--blob-backend',
-        'object-store',
-        'search',
-        'terms',
-      ]),
-      throwsA(isA<CliUsageException>()),
-    );
-  });
-
   test('data verbs require a database path', () {
     expect(
       () => parseCommandLine(['search', 'terms']),

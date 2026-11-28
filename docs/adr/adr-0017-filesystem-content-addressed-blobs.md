@@ -33,4 +33,5 @@ is proportional to indexed text rather than message bodies. A backup becomes
 the SQLite file plus the local blob folder, which the application can package
 together. Verification still uses the stored digest, so a corrupt file is
 quarantined with the same code path as before. The migration must prove byte
-identity before removing an old SQLite row, and it is tracked in the roadmap.
+identity before removing an old SQLite row. A Zstd decoder remains only for
+that one-way migration; no new profile writes compressed rows to SQLite.
