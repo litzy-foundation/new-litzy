@@ -19,6 +19,8 @@ dns_timeout_ms: 3000
 allowed_imap_ports: [143, 993]
 allowed_smtp_ports: [465, 587]
 allow_loopback_plaintext_fixtures: true
+default_list_id: git
+loopback_fixture_http_port: 0
 ''';
 
 const config = '''
@@ -99,6 +101,13 @@ void main() {
         expect(response.accountId, 'user@example.com');
         expect(response.authentication, AccountAuthentication.password);
         expect('$connected', isNot(contains('secret-value')));
+
+        final listed = await handler.handle(const ListAccountsRequest('list'));
+        expect(listed, isA<AccountListResponse>());
+        final accounts = (listed as AccountListResponse).accounts;
+        expect(accounts, hasLength(1));
+        expect(accounts.single.email, 'user@example.com');
+        expect(accounts.single.imapHost, 'imap.example.com');
       } finally {
         await handler.handle(const ShutdownRequest('shutdown'));
         directory.deleteSync(recursive: true);

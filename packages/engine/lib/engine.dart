@@ -6,6 +6,7 @@
 library;
 
 export 'src/access/access_policy.dart';
+export 'src/access/access_policy_environment_keys.dart';
 export 'src/access/access_policy_file.dart';
 export 'src/access/account_discovery_service.dart';
 export 'src/access/account_login_verifier.dart';

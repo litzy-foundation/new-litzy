@@ -159,4 +159,7 @@ final class SqlKeys {
 
   /// Reads one connected account by identifier.
   static const String selectAccount = 'select_account.sql';
+
+  /// Reads every connected account in stable order.
+  static const String selectAccounts = 'select_accounts.sql';
 }

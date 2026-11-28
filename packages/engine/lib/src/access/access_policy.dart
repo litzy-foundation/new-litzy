@@ -18,6 +18,8 @@ final class AccessPolicy {
     required this.allowedImapPorts,
     required this.allowedSmtpPorts,
     required this.allowLoopbackPlaintextFixtures,
+    required this.defaultListId,
+    required this.loopbackFixtureHttpPort,
   });
 
   /// Parses a versioned policy document.
@@ -31,11 +33,18 @@ final class AccessPolicy {
     final maxBytes = _integer(document, 'max_document_bytes');
     final redirects = _integer(document, 'redirect_budget');
     final loopback = document['allow_loopback_plaintext_fixtures'];
+    final listId = document['default_list_id'];
+    final fixturePort = document['loopback_fixture_http_port'];
     if (httpTimeout <= 0 ||
         dnsTimeout <= 0 ||
         maxBytes <= 0 ||
         redirects < 0 ||
-        loopback is! bool) {
+        loopback is! bool ||
+        listId is! String ||
+        listId.isEmpty ||
+        fixturePort is! int ||
+        fixturePort < 0 ||
+        fixturePort > 65535) {
       throw StateError('the access policy contains an invalid limit');
     }
     return AccessPolicy(
@@ -46,6 +55,8 @@ final class AccessPolicy {
       allowedImapPorts: _ports(document, 'allowed_imap_ports'),
       allowedSmtpPorts: _ports(document, 'allowed_smtp_ports'),
       allowLoopbackPlaintextFixtures: loopback,
+      defaultListId: listId,
+      loopbackFixtureHttpPort: fixturePort,
     );
   }
 
@@ -90,6 +101,12 @@ final class AccessPolicy {
 
   /// Whether plaintext sockets are limited to loopback fixtures.
   final bool allowLoopbackPlaintextFixtures;
+
+  /// List identifier used when a front-end does not name one.
+  final String defaultListId;
+
+  /// HTTP port used by a loopback autoconfiguration fixture, or zero.
+  final int loopbackFixtureHttpPort;
 
   /// Reports whether [port] may be used for IMAP.
   bool allowsImapPort(int port) => allowedImapPorts.contains(port);

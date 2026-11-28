@@ -3,6 +3,8 @@ import 'dart:isolate';
 
 part 'account_credential.dart';
 part 'account_endpoint.dart';
+part 'account_list_response.dart';
+part 'account_view.dart';
 part 'channel_list_response.dart';
 part 'channel_view.dart';
 part 'connect_account_request.dart';
@@ -10,6 +12,7 @@ part 'connect_account_response.dart';
 part 'discover_account_request.dart';
 part 'discover_account_response.dart';
 part 'discovered_account.dart';
+part 'list_accounts_request.dart';
 part 'list_channels_request.dart';
 part 'list_threads_request.dart';
 part 'show_thread_request.dart';

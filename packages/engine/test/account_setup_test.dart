@@ -17,6 +17,8 @@ dns_timeout_ms: 3000
 allowed_imap_ports: [143, 993]
 allowed_smtp_ports: [465, 587]
 allow_loopback_plaintext_fixtures: true
+default_list_id: git
+loopback_fixture_http_port: 0
 ''';
 
 final class FakeLoginVerifier implements AccountLoginVerifier {
@@ -92,6 +94,19 @@ void main() {
     final stored = database.accountOf('user@example.com');
     expect(stored, isNotNull);
     expect(stored?.email, 'user@example.com');
+  });
+
+  test('an omitted list identifier uses the declarative default', () async {
+    final record = await service.connect(
+      ConnectAccountRequest(
+        'connect-default',
+        emailAddress: 'user@example.com',
+        credential: AccountCredential.password('secret-value'),
+        imap: imap,
+        smtp: smtp,
+      ),
+    );
+    expect(record.listId, 'git');
   });
 
   test('a rejected login stores nothing', () async {

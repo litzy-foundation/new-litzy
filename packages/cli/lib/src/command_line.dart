@@ -1,7 +1,10 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'package:protocol/protocol.dart';
 
+part 'accounts_command.dart';
 part 'channels_command.dart';
+part 'connect_command.dart';
+part 'discover_command.dart';
 part 'list_command.dart';
 part 'show_command.dart';
 
@@ -127,6 +130,15 @@ final class ParsedCliCommand {
 }
 
 const Set<String> _booleanOptions = {'read', 'unread', 'star', 'unstar'};
+const Set<String> _valueOptions = {
+  'database',
+  'blobs',
+  'catalogue',
+  'source',
+  'body',
+  'format',
+  'snapshot',
+};
 
 /// Parses command-line arguments without touching the engine.
 ParsedCliCommand parseCommandLine(List<String> arguments) {
@@ -140,6 +152,9 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       if (_booleanOptions.contains(name)) {
         flags.add(name);
         continue;
+      }
+      if (!_valueOptions.contains(name)) {
+        throw CliUsageException('unknown option --$name');
       }
       if (index + 1 >= arguments.length ||
           arguments[index + 1].startsWith('--')) {
@@ -156,7 +171,8 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
     throw const CliUsageException('triage flags belong to the triage command');
   }
   final database = options['database'];
-  if (name != 'ping' && (database == null || database.isEmpty)) {
+  if (!const {'ping', 'discover'}.contains(name) &&
+      (database == null || database.isEmpty)) {
     throw const CliUsageException('--database is required for data commands');
   }
   if (positional.length > 1) {
@@ -285,6 +301,33 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
               ? false
               : null,
         ),
+      );
+    case 'discover':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('discover needs an email address');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: DiscoverCommand(argument),
+      );
+    case 'connect':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('connect needs an email address');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: ConnectCommand(argument),
+      );
+    case 'accounts':
+      if (argument != null) {
+        throw const CliUsageException('accounts takes no argument');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: const AccountsCommand(),
       );
     case 'audit':
       final snapshot = options['snapshot'];

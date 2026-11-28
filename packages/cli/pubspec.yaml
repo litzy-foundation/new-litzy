@@ -7,8 +7,12 @@ environment:
 dependencies:
   engine:
     path: ../engine
+  l10n:
+    path: ../l10n
   protocol:
     path: ../protocol
+  security:
+    path: ../security
 dev_dependencies:
   core:
     path: ../core

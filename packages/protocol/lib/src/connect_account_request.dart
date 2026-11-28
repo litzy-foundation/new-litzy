@@ -13,7 +13,7 @@ final class ConnectAccountRequest extends LmlpRequest {
     required this.credential,
     required this.imap,
     required this.smtp,
-    required this.listId,
+    this.listId,
   });
 
   /// Address typed by the user.
@@ -28,6 +28,6 @@ final class ConnectAccountRequest extends LmlpRequest {
   /// Endpoint approved for submission.
   final AccountEndpoint smtp;
 
-  /// List identifier that Mode B ingestion must declare.
-  final String listId;
+  /// Optional list identifier; the engine uses its declarative default.
+  final String? listId;
 }

@@ -220,20 +220,22 @@ test:binary` builds the Linux GUI with `flutter build linux --debug`, compiles
 the CLI with `dart build cli`, then launches both binaries against temporary
 SQLite profiles seeded from `data/fixtures/git_public_inbox_thread.mbox`. The
 GUI run asserts the machine-readable `app.ready`, channel and topic markers;
-the CLI run asserts its JSON channel, topic and thread output. Both runs
-passed on 2026-11-28. macOS, Windows, Android and iOS were not built or
-launched on this machine and are not claimed as tested.
+the CLI run asserts its JSON channel, topic and thread output. The access
+acceptance also drives `discover`, `connect` and `accounts` in the compiled CLI
+against loopback HTTP and IMAP fixtures, and the compiled GUI reports an
+`app.setup-required` marker on a profile without accounts. Both runs passed on
+2026-11-28. macOS, Windows, Android and iOS were not built or launched on this
+machine and are not claimed as tested.
 
-## P21 — Automatic mail access is not implemented
+## P21 — Automatic mail access
 
-Access still requires the caller of the Mode B verb to know a host, a port, a
-list identifier and a password. The CLI has no Mode B command because no
-platform `SecretStore` adapter exists, and neither front-end can take an email
-address and derive the provider settings. The maintainer stated: "assicurati
+Access originally required the caller of the Mode B verb to know a host, a port,
+a list identifier and a password. The maintainer stated: "assicurati
 di non fare minchiate nel passaggio critico : l'accesso ; ricordo che devo
 poter accedere con tutti i provider mail ; io metto l'email e l'app configura
 automaticamente tutto" and "no credenziali in chiaro, no problemi di ogni tipo
-, no vulnerabilità eligibili". Status: open, tracked in S15. Evidence: R53
+, no vulnerabilità eligibili". Status: addressed for password-based providers
+and tracked in S15. Evidence: R53
 records the directive and ADR-0025 records the trust model, the ordered
 discovery, the mandatory TLS, the keychain credential path and the hostile
 input checks. The typed discovery and connect verbs now derive endpoints from
@@ -242,10 +244,20 @@ only non-secret settings; fake HTTPS, DNS and IMAP ports test plaintext
 redirects, cross-origin documents, oversized bodies, XML doctypes, control
 characters, out-of-policy ports and rejected logins. Manual operation was
 confirmed in this session: Mode C works from a YAML catalogue and the Mode B
-verb works against a loopback fixture. No front-end exposes automatic access
-because a non-echoing credential prompt and a native keychain adapter do not
-exist yet. This entry stays open until a user-facing path has binary acceptance
-evidence under R50.
+verb works against a loopback fixture. The front-end half now has a typed
+account source, an obscured GUI form and a non-echoing CLI prompt. Both
+front-ends derive endpoints from the address, verify the login and put the
+password in the operating system keychain through `CredentialVault`, with
+rollback when verification fails. The CLI adapter uses libsecret on Linux and
+the GUI adapter declares `flutter_secure_storage` for all five targets, with
+only the Linux build exercised here. Both compiled binaries were launched
+against a real profile under R50 and the CLI acceptance
+stored and removed a temporary libsecret attribute. The acceptance password is
+generated at run time, sent through a pipe with no echo and checked by the
+IMAP fixture, so no versioned file or argument holds it. A second connection
+with a rejected run-time password leaves no keychain entry. Providers that accept
+only OAuth remain open in P24, and macOS, Windows, Android and iOS keychain
+behaviour is unverified on this host.
 
 ## P22 — App style and real-app baseline are incomplete
 
@@ -257,9 +269,11 @@ vera e propria" and "non saprei, vedi tu il modo migliore". Status: tracked in
 S16. Evidence: R54 records the directive and ADR-0026 defines Quiet Workshop
 and the baseline of a real application. `data/ui/theme.yaml` now holds the
 style roles as keys, `ThemeConfig` parses them and `LitzyApp` takes its surface,
-reading and outline colours from that bundle. Onboarding, settings, sync
-status and account setup screens are still planned, so this entry stays open
-until the full baseline is implemented and verified.
+reading and outline colours from that bundle. The account setup screen now
+takes an address and a password, shows the derived endpoints and can be skipped
+for public reading. Settings, sync status and a full onboarding sequence are
+still planned, so this entry stays open until the baseline is implemented and
+verified.
 
 ## P23 — Raw control-character escapes in source
 
@@ -273,3 +287,16 @@ fixture now use named tokens, `data/quality/control_character_guard.yaml`
 declares the forbidden sequences and the scanned directories, and
 `control_character_guard_test.dart` fails on any regression. The guard and the
 full suite passed on 2026-11-28.
+
+## P24 — OAuth-only providers cannot be connected
+
+R53 requires access for every mail provider, but R10 forbids a table of
+provider exceptions. R55 records the maintainer's decision to ship the secure
+password form first and track OAuth separately. An OAuth 2.0 client needs a
+registered client identifier, and open discovery documents do not publish one,
+so a provider that accepts only OAuth cannot be connected by this slice. No
+credential is weakened and no provider table is introduced to work around the
+gap. Status: open, tracked in S15b. Evidence: R53 and R55 keep the requirement
+and the sequencing, ADR-0025 records the trust boundary and the roadmap holds
+the work. This entry stays open until a provider-agnostic registration
+mechanism exists and both front-ends use the existing `OAuthProvider` port.

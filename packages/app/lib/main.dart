@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:engine/engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:protocol/protocol.dart';
+import 'package:security/security.dart';
 
 import 'app.dart';
 
@@ -32,12 +33,19 @@ Future<void> main() async {
     if (opened is! AckResponse) {
       throw const ReadingFailure(AppRequestKeys.unexpectedResponse);
     }
+    const vault = CredentialVault(
+      store: FlutterSecureStorageStore(),
+      providers: [],
+    );
     runApp(
       LitzyApp(
         engine: engine,
         source: EngineReadingSource(engine),
+        accountSource: EngineAccountSource(engine),
+        vault: vault,
         bundle: bundle,
         onLoaded: reporter.report,
+        onSetupRequired: reporter.reportSetupRequired,
       ),
     );
   } on Object catch (error) {

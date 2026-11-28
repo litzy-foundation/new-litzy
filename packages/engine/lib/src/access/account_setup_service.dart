@@ -48,8 +48,8 @@ final class AccountSetupService {
     _checkEndpoint(request.smtp);
     _checkAuthentication(request.imap, request.credential);
     _checkAuthentication(request.smtp, request.credential);
-    if (TextTokens.containsControlCharacter(request.listId) ||
-        request.listId.trim().isEmpty) {
+    final listId = request.listId ?? policy.defaultListId;
+    if (TextTokens.containsControlCharacter(listId) || listId.trim().isEmpty) {
       throw const SetupException(
         'invalid_account',
         'the list identifier is not valid',
@@ -70,7 +70,7 @@ final class AccountSetupService {
       smtpHost: request.smtp.host,
       smtpPort: request.smtp.port,
       authentication: request.credential.kind.name,
-      listId: request.listId,
+      listId: listId,
       createdAt: DateTime.now().millisecondsSinceEpoch,
     );
     database.upsertAccount(record);

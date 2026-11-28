@@ -15,6 +15,9 @@ final class AppRequestKeys {
   /// Key of the loaded topic count in acceptance output.
   static const String topics = 'app.topics';
 
+  /// Marker written when the compiled client opens the account setup gate.
+  static const String setupRequired = 'app.setup-required';
+
   /// Key of the startup error in acceptance output.
   static const String failure = 'app.failure';
 

@@ -322,14 +322,38 @@ has a deterministic typed error.
 Tests are written first with fake HTTPS, DNS and IMAP ports. They cover a
 redirect to plaintext, a cross-origin endpoint, an oversized document, an
 external XML entity, a control character in the address and a downgrade
-attempt. No test stores a real credential or contacts a real provider. The
-front-end surfaces, the CLI command and the platform `SecretStore` adapter
-remain separate work: no slice claims terminal or persistent account access
-until a non-echoing prompt and a native keychain adapter exist. No binary
-exposes the flow in this slice, so R50 acceptance applies when the first
-front-end builds it. Packaging the declarative policy beside a compiled client
-also belongs to that front-end slice. Status: engine verbs, ports, storage and
-tests complete; user-facing access remains tracked as P21.
+attempt. No test stores a real credential or contacts a real provider.
+
+The front-end half takes an address and a password entered through an obscured
+form or a non-echoing terminal prompt. A typed discover verb derives the
+endpoints, a typed connect verb verifies the login, and the credential goes to
+the operating system keychain through `CredentialVault` and a platform
+`SecretStore`. The CLI uses libsecret on Linux and the GUI declares
+`flutter_secure_storage` for every mobile and desktop target, with only Linux
+verified on this host. A failure removes
+the stored secret, and neither front-end prints or persists the password. The
+declarative policy is read from `data/access/policy.yaml`, and acceptance
+supplies a fixture policy through `LITZY_ACCESS_POLICY` instead of placing a
+provider or a secret in code. R50 acceptance drives the real CLI and GUI
+binaries against a local profile; the CLI derives endpoints from an HTTP
+loopback fixture, verifies a run-time password against an IMAP loopback fixture,
+lists the stored account and confirms that a rejected password removes the
+keychain entry, while the GUI reports the setup gate on an empty profile.
+Status: complete for password-based providers, with evidence in P21. The shipped
+policy disables loopback plaintext fixtures; acceptance supplies its own
+fixture policy through a path variable. OAuth-only providers remain open in
+S15b and P24 under R55. macOS, Windows, Android and iOS are not verified on
+this host.
+
+## S15b — Provider-agnostic OAuth
+
+Implement the OAuth branch of ADR-0025 without a provider table, as decided in
+R55. The vault already owns an `OAuthProvider` port and token storage, but a
+PKCE client needs a registered client identifier that open discovery documents
+do not publish. Deriving one from a provider name would violate R10, so this
+slice stays open until a provider-agnostic registration mechanism exists. When
+it lands, both front-ends must use the same port and must keep tokens in the
+operating system keychain. Status: open, tracked as P24.
 
 ## S15a — Named control characters
 

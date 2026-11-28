@@ -493,6 +493,28 @@ final class LocalDatabase {
     );
   }
 
+  /// Returns every stored account in stable order without any secret material.
+  List<AccountRecord> accounts() {
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.selectAccounts),
+    );
+    return rows
+        .map(
+          (row) => (
+            id: row['id'] as String,
+            email: row['email'] as String,
+            imapHost: row['imap_host'] as String,
+            imapPort: row['imap_port'] as int,
+            smtpHost: row['smtp_host'] as String,
+            smtpPort: row['smtp_port'] as int,
+            authentication: row['authentication'] as String,
+            listId: row['list_id'] as String,
+            createdAt: row['created_at'] as int,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   /// Writes a copy of the database to [destination] for a durable backup.
   void backupTo(File destination) {
     _database.execute(SqlResources.vacuumInto(destination.path));

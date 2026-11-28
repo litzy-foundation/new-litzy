@@ -557,6 +557,21 @@ secure credential lifecycle, local data lifecycle and no telemetry. ADR-0026
 records the choice, S16 tracks the work and P22 stays in the problem register
 until the baseline is implemented and verified.
 
+## R55 — Password access first and provider-agnostic OAuth later
+
+When asked how to handle providers that advertise only OAuth 2.0 without
+breaking R10, the maintainer chose "Password ora, OAuth tracciato". The first
+user-facing access slice therefore supports a password entered through an
+obscured form or a non-echoing terminal prompt, with the secret held by the
+operating system keychain for every RFC-compliant provider. A generic OAuth
+client cannot work without a registered client identifier, and a table of
+provider identifiers would reintroduce the exceptions that R10 forbids. OAuth
+is deferred rather than abandoned: when it is implemented it must discover its
+configuration from the provider and keep no provider table. P24 records the
+providers that cannot be connected until that work exists. R53 remains in
+force, including the ban on plaintext credentials in arguments, files,
+fixtures, logs and environment variables.
+
 ## Open questions
 
 | # | Question | Status |
