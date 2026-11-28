@@ -49,6 +49,33 @@ void main() {
     expect((thread.command as ThreadCommand).rootId, 'm1@example.invalid');
   });
 
+  test('reply takes a message identifier and a body', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'reply',
+      'm1@example.invalid',
+      '--body',
+      'my reply',
+    ]);
+
+    final command = parsed.command as ReplyCommand;
+    expect(command.messageId, 'm1@example.invalid');
+    expect(command.body, 'my reply');
+  });
+
+  test('reply needs a body', () {
+    expect(
+      () => parseCommandLine([
+        '--database',
+        'p.db',
+        'reply',
+        'm1@example.invalid',
+      ]),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
   test('import takes a local path and a format', () {
     final parsed = parseCommandLine([
       '--database',

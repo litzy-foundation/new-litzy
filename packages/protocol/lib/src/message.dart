@@ -185,6 +185,18 @@ final class ThreadRequest extends LmlpRequest {
   final String rootId;
 }
 
+/// Builds and stores a quoted reply draft for one message.
+final class CreateDraftRequest extends LmlpRequest {
+  /// Creates a reply draft for [messageId] with the user's [body].
+  const CreateDraftRequest(super.id, this.messageId, this.body);
+
+  /// Identifier of the message being answered.
+  final String messageId;
+
+  /// Text written by the user above the quoted original.
+  final String body;
+}
+
 /// Imports local Maildir or mbox mail into the open profile.
 final class ImportRequest extends LmlpRequest {
   /// Creates an import request for [path] in [format].
@@ -300,6 +312,30 @@ final class ThreadResponse extends LmlpResponse {
 
   /// Messages in pre-order.
   final List<MessageData> messages;
+}
+
+/// Reports the quoted reply draft stored by the engine.
+final class DraftResponse extends LmlpResponse {
+  /// Creates a response describing the stored draft.
+  const DraftResponse(
+    super.id,
+    this.draftId,
+    this.messageId,
+    this.subject,
+    this.body,
+  );
+
+  /// Stable identifier of the draft.
+  final String draftId;
+
+  /// Identifier of the message being answered.
+  final String messageId;
+
+  /// Subject prepared for the reply.
+  final String subject;
+
+  /// Full quoted body stored in the draft.
+  final String body;
 }
 
 /// Reports how many new messages an import persisted.

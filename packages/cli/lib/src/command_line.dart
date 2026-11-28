@@ -55,6 +55,18 @@ final class ThreadCommand extends CliCommand {
   final String rootId;
 }
 
+/// Builds a local reply draft for one message.
+final class ReplyCommand extends CliCommand {
+  /// Creates a reply command for [messageId] with the user's [body].
+  const ReplyCommand(this.messageId, this.body);
+
+  /// Identifier of the message being answered.
+  final String messageId;
+
+  /// Text written by the user above the quoted original.
+  final String body;
+}
+
 /// Imports a local Maildir folder or mbox file into the open profile.
 final class ImportCommand extends CliCommand {
   /// Creates an import command for [path] in [format].
@@ -202,6 +214,20 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
         blobsDirectory: blobs,
         blobBackend: backend,
         command: ThreadCommand(argument),
+      );
+    case 'reply':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('reply needs a message identifier');
+      }
+      final body = options['body'];
+      if (body == null || body.isEmpty) {
+        throw const CliUsageException('reply needs --body');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        blobBackend: backend,
+        command: ReplyCommand(argument, body),
       );
     case 'import':
       if (argument == null || argument.isEmpty) {

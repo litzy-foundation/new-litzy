@@ -166,7 +166,9 @@ from a local file and prints the engine's verdict. Read and starred flags live
 in SQLite behind typed verbs, and the CLI changes them with explicit flags.
 Local Maildir and mbox import shares the mbox parser with public-inbox and
 skips identifiers that are already persisted, so a repeated import adds no
-duplicates. Still to do: draft replies.
+duplicates. The reply command builds a quoted draft in the engine and stores it
+in SQLite under one identifier per source message. Sending stays in the
+outbound slice.
 
 ## S6 — Flutter GUI
 
