@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 
 import 'channel_record.dart';
 import 'message_record.dart';
+import 'sync_cursor.dart';
 
 /// A compressed content row with the codec used and the uncompressed size.
 typedef StoredBlob = ({String codec, int size, Uint8List payload});
@@ -80,6 +81,12 @@ final class LocalDatabase {
         codec TEXT NOT NULL,
         size INTEGER NOT NULL,
         payload BLOB NOT NULL
+      )
+    ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS sync_cursors (
+        channel_id TEXT PRIMARY KEY,
+        cursor TEXT NOT NULL
       )
     ''');
     _database.execute('''
@@ -214,6 +221,27 @@ final class LocalDatabase {
       size: row['size'] as int,
       payload: row['payload'] as Uint8List,
     );
+  }
+
+  /// Stores the incremental cursor for [channelId].
+  void setCursor(String channelId, SyncCursor cursor) {
+    _database.execute(
+      '''
+      INSERT INTO sync_cursors (channel_id, cursor) VALUES (?, ?)
+      ON CONFLICT(channel_id) DO UPDATE SET cursor = excluded.cursor
+      ''',
+      [channelId, cursor.encode()],
+    );
+  }
+
+  /// Returns the cursor for [channelId], or null when none was stored.
+  SyncCursor? cursorOf(String channelId) {
+    final rows = _database.select(
+      'SELECT cursor FROM sync_cursors WHERE channel_id = ?',
+      [channelId],
+    );
+    if (rows.isEmpty) return null;
+    return SyncCursor.decode(rows.first['cursor'] as String);
   }
 
   /// Records the mailbox policy chosen for [listId].

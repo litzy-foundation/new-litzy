@@ -4,6 +4,7 @@ import 'package:protocol/protocol.dart';
 import '../storage/channel_record.dart';
 import '../storage/blob_store.dart';
 import '../storage/local_database.dart';
+import '../storage/sync_cursor.dart';
 import 'catalog.dart';
 import 'channel_mapper.dart';
 import 'mode_c_ingestor.dart';
@@ -16,6 +17,8 @@ import 'public_inbox_client.dart';
 /// choice of client, the trust check and persistence stay in the engine as
 /// required by R13 and ADR-0010.
 final class ModeCSyncService {
+  static const int _maximumRememberedThreads = 256;
+
   /// Creates a sync service over the local store and blob folder.
   const ModeCSyncService({required this.database, required this.blobs});
 
@@ -25,7 +28,10 @@ final class ModeCSyncService {
   /// Folder that receives the raw message content.
   final BlobStore blobs;
 
-  /// Fetches [sourceId] from [cataloguePath] and persists its messages.
+  /// Fetches new messages for [sourceId] from [cataloguePath] and persists them.
+  ///
+  /// The stored cursor decides what is new. It advances only after the batch
+  /// commits, so a rejected message can be fetched again on the next sync.
   Future<SyncResponse> sync(
     String id,
     String cataloguePath,
@@ -46,17 +52,24 @@ final class ModeCSyncService {
       );
     }
     final channel = ChannelMapper.fromSource(source);
-    final messages = channel.protocol == 'nntp'
-        ? await _fetchFromNntp(channel)
-        : await _fetchFromInbox(channel);
-    final count = ModeCIngestor(
-      database: database,
-      blobs: blobs,
-    ).ingest(channel, messages);
+    final cursor = database.cursorOf(channel.id) ?? const SyncCursor();
+    final fetched = channel.protocol == 'nntp'
+        ? await _fetchFromNntp(channel, cursor)
+        : await _fetchFromInbox(channel, cursor);
+    final count = fetched.messages.isEmpty
+        ? 0
+        : ModeCIngestor(
+            database: database,
+            blobs: blobs,
+          ).ingest(channel, fetched.messages);
+    database.setCursor(channel.id, fetched.cursor);
     return SyncResponse(id, channel.id, count);
   }
 
-  Future<List<RawMessage>> _fetchFromNntp(ChannelRecord channel) async {
+  Future<({List<RawMessage> messages, SyncCursor cursor})> _fetchFromNntp(
+    ChannelRecord channel,
+    SyncCursor cursor,
+  ) async {
     final pieces = channel.endpoint.split('/');
     final authority = pieces.first.split(':');
     final host = authority.first;
@@ -68,25 +81,49 @@ final class ModeCSyncService {
     try {
       await client.connect();
       await client.group(newsgroup);
-      final overview = await client.overview('1-');
+      final range = '${cursor.articleNumber + 1}-';
+      final overview = await client.overview(range);
+      final fresh = overview
+          .where((row) => row.number > cursor.articleNumber)
+          .toList(growable: false);
       final messages = <RawMessage>[];
-      for (final row in overview) {
+      var highest = cursor.articleNumber;
+      for (final row in fresh) {
         messages.add((await client.article(row.messageId)).toRawMessage());
+        if (row.number > highest) highest = row.number;
       }
-      return messages;
+      return (
+        messages: messages,
+        cursor: SyncCursor(articleNumber: highest, threadIds: cursor.threadIds),
+      );
     } finally {
       client.close();
     }
   }
 
-  Future<List<RawMessage>> _fetchFromInbox(ChannelRecord channel) async {
+  Future<({List<RawMessage> messages, SyncCursor cursor})> _fetchFromInbox(
+    ChannelRecord channel,
+    SyncCursor cursor,
+  ) async {
     final base = Uri.parse(channel.endpoint);
     final client = const PublicInboxClient();
     final ids = await client.recentThreadIds(base);
+    final seen = cursor.threadIds.toSet();
+    final fresh = ids.where((id) => !seen.contains(id)).toList();
     final messages = <RawMessage>[];
-    for (final id in ids) {
+    for (final id in fresh) {
       messages.addAll(await client.threadMessages(base, id));
     }
-    return messages;
+    final remembered = <String>[];
+    for (final id in [...ids, ...cursor.threadIds]) {
+      if (!remembered.contains(id)) remembered.add(id);
+    }
+    return (
+      messages: messages,
+      cursor: SyncCursor(
+        articleNumber: cursor.articleNumber,
+        threadIds: remembered.take(_maximumRememberedThreads).toList(),
+      ),
+    );
   }
 }

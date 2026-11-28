@@ -22,3 +22,4 @@ export 'src/storage/local_blob_store.dart';
 export 'src/storage/local_database.dart';
 export 'src/storage/message_record.dart';
 export 'src/storage/sqlite_blob_store.dart';
+export 'src/storage/sync_cursor.dart';
