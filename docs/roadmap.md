@@ -73,8 +73,13 @@ folder and rejects a file whose bytes no longer match its digest.
 `SqliteBlobStore` keeps a Zstd frame and its uncompressed size in the same
 database, so one file is a complete backup. Both backends are selected by a
 typed field on the open request, and tests cover them through identical
-calls. Still to do: the Drift mapping that replaces the direct `sqlite3`
-statements while keeping the same SQL.
+calls. Deferred: the Drift mapping that replaces the direct `sqlite3`
+statements. Drift 2.35 exposes only an async query API, while
+`LocalDatabase`, `BlobStore` and `ModeCIngestor.ingest` are synchronous, so a
+faithful mapping would change the engine API and the tests that call storage
+directly. The mismatch is recorded as P10 in the problem register. The
+migration belongs in a dedicated slice that converts the storage and blob
+ports to async together; the current SQL stays unchanged until then.
 
 ## S3 — Mode C ingestion
 
