@@ -85,3 +85,18 @@ and ADR-0014. Evidence: the versioned hook is removed from the tree, the
 installed mirror hook is moved to the existing local backup rather than
 deleted, and the `pr-guard` workflow plus branch protection enforce the pull
 request rules on GitHub. The mirror remains an offline copy without policy.
+
+## P10 — Drift's async API versus synchronous storage ports
+
+R25 and ADR-0005 require Drift for SQLite threading. Drift 2.35 resolves in
+this workspace with `drift` 2.35.4, `drift_dev` 2.35.3 and `sqlite3` 3.9.2,
+but its custom selects, writes and transactions all return futures. The
+current `LocalDatabase`, `BlobStore` and `ModeCIngestor.ingest` are
+synchronous, so Drift cannot replace the statements as a drop-in change. A
+faithful mapping would convert the storage and blob ports to async and
+update the engine and the tests that read the database directly. Status:
+tracked for a dedicated S2 follow-up. Evidence: the dependency experiment
+resolved successfully and analysis reported only deprecation notices in the
+existing `sqlite3` calls before the experiment was reverted, so no Drift
+dependency remains in the tree. The SQL statements and the storage tests
+stay stable until the async slice lands.
