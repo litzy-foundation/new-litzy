@@ -5,6 +5,7 @@ import '../storage/channel_record.dart';
 import '../storage/blob_store.dart';
 import '../storage/local_database.dart';
 import '../storage/message_record.dart';
+import 'message_headers.dart';
 import 'public_inbox_client.dart';
 
 /// Reports a Mode C message that cannot be trusted or persisted.
@@ -55,7 +56,7 @@ final class ModeCIngestor {
           'the raw message does not match its digest',
         );
       }
-      final listId = _identifier(message.headers['list-id']);
+      final listId = headerIdentifier(message.headers['list-id']);
       if (listId.isEmpty) {
         throw const ModeCIngestException(
           'missing_list_id',
@@ -68,24 +69,20 @@ final class ModeCIngestor {
           'expected ${channel.listId} but found $listId',
         );
       }
-      final messageId = _identifier(message.headers['message-id']);
+      final messageId = headerIdentifier(message.headers['message-id']);
       if (messageId.isEmpty) {
         throw const ModeCIngestException(
           'invalid_message_id',
           'the message has no usable Message-ID',
         );
       }
-      final parentId = _identifier(message.headers['in-reply-to']);
-      final firstReference = _identifier(
-        RegExp(r'<[^>]+>')
-            .firstMatch(message.headers['references'] ?? '')
-            ?.group(0),
+      final parentId = headerIdentifier(message.headers['in-reply-to']);
+      final rootId = headerThreadRoot(
+        messageId: messageId,
+        inReplyTo: message.headers['in-reply-to'] ?? '',
+        references: message.headers['references'] ?? '',
+        roots: roots,
       );
-      final rootId = firstReference.isNotEmpty
-          ? firstReference
-          : parentId.isNotEmpty && roots.containsKey(parentId)
-          ? roots[parentId]!
-          : messageId;
       roots[messageId] = rootId;
       rawById[messageId] = rawBytes;
       records.add(
@@ -94,7 +91,7 @@ final class ModeCIngestor {
           listId: channel.listId,
           subject: message.headers['subject'] ?? '',
           fromAddress: message.headers['from'] ?? '',
-          dateEpoch: _epoch(message.headers['date']),
+          dateEpoch: headerEpoch(message.headers['date']),
           parentId: parentId.isEmpty ? null : parentId,
           threadRootId: rootId,
           body: message.body,
@@ -116,13 +113,5 @@ final class ModeCIngestor {
       );
     }
     return records.length;
-  }
-
-  static String _identifier(String? value) =>
-      value?.replaceAll(RegExp(r'[<>\s]'), '') ?? '';
-
-  static int _epoch(String? value) {
-    final parsed = value == null ? null : DateTime.tryParse(value);
-    return parsed == null ? 0 : parsed.millisecondsSinceEpoch ~/ 1000;
   }
 }

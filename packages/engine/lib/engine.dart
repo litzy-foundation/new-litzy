@@ -10,6 +10,8 @@ export 'src/engine_isolate.dart';
 export 'src/ingestion/audit_service.dart';
 export 'src/ingestion/catalog.dart';
 export 'src/ingestion/channel_mapper.dart';
+export 'src/ingestion/local_import_service.dart';
+export 'src/ingestion/local_mail_parser.dart';
 export 'src/ingestion/mailbox_action.dart';
 export 'src/ingestion/mailbox_port.dart';
 export 'src/ingestion/mode_c_ingestor.dart';

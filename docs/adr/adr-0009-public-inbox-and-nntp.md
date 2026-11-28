@@ -54,3 +54,11 @@ public-inbox cursor keeps the most recently seen thread identifiers, so the
 next sync still reads the small atom feed but skips the compressed mbox of a
 thread it already fetched. A cursor advances only after the batch commits,
 and a rejected batch leaves it unchanged.
+
+Local Maildir and mbox import uses the same mbox parser and the same raw
+message shape as public-inbox, so a local archive follows the identical
+checksum, threading and blob path. A Maildir contributes only the files in
+`cur` and `new`, because `tmp` may hold an incomplete delivery. Imported mail
+keeps its `List-Id` when present and uses the stable source name
+`local-import` otherwise. Identifiers already in the profile are skipped,
+which makes an interrupted import safe to repeat.

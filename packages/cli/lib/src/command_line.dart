@@ -55,6 +55,18 @@ final class ThreadCommand extends CliCommand {
   final String rootId;
 }
 
+/// Imports a local Maildir folder or mbox file into the open profile.
+final class ImportCommand extends CliCommand {
+  /// Creates an import command for [path] in [format].
+  const ImportCommand(this.path, this.format);
+
+  /// Path of the local mail source.
+  final String path;
+
+  /// Format used to parse the source.
+  final MailImportFormat format;
+}
+
 /// Changes one or two triage flags on a persisted message.
 final class TriageCommand extends CliCommand {
   /// Creates a triage command with optional new values for both flags.
@@ -191,6 +203,16 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
         blobBackend: backend,
         command: ThreadCommand(argument),
       );
+    case 'import':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('import needs a local path');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        blobBackend: backend,
+        command: ImportCommand(argument, _mailImportFormat(options['format'])),
+      );
     case 'triage':
       if (argument == null || argument.isEmpty) {
         throw const CliUsageException('triage needs a message identifier');
@@ -240,6 +262,12 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       throw CliUsageException('unknown command $name');
   }
 }
+
+MailImportFormat _mailImportFormat(String? value) => switch (value) {
+  'maildir' => MailImportFormat.maildir,
+  'mbox' => MailImportFormat.mbox,
+  _ => throw CliUsageException('unknown mail format $value'),
+};
 
 BlobBackend _blobBackend(String? value) => switch (value) {
   null || 'folder' => BlobBackend.folder,

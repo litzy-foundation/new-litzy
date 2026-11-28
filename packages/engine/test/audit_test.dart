@@ -81,8 +81,8 @@ void main() {
     );
 
     final response = await client.sendRequest(
-      AuditRequest('audit', [
-        const InboxMessage(
+      const AuditRequest('audit', [
+        InboxMessage(
           uid: '7',
           messageId: 'r@example.invalid',
           listId: 'git@vger.kernel.org',

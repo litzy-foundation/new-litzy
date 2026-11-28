@@ -208,6 +208,36 @@ sources:
     expect(result.stderr as String, contains('sync_failed'));
   });
 
+  test('a local mbox imports through the real binary', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final source = File(
+      '${harness.directory.path}${Platform.pathSeparator}inbox.mbox',
+    );
+    source.writeAsStringSync('''
+From author@example.invalid Mon Nov 28 00:00:00 2026 +0000
+Message-ID: <imported@example.invalid>
+Subject: imported binary subject
+From: Author <author@example.invalid>
+
+imported binary body
+''');
+
+    final imported = await harness.run([
+      'import',
+      '--format',
+      'mbox',
+      source.path,
+    ]);
+    final found = await harness.run(['search', 'imported binary body']);
+
+    expect(imported.exitCode, 0);
+    expect(_jsonObject(imported.stdout), {'count': 1});
+    expect(_jsonObject(found.stdout), {
+      'ids': ['imported@example.invalid'],
+    });
+  });
+
   test('triage flags persist across binary invocations', () async {
     final harness = _Harness(root);
     addTearDown(harness.close);

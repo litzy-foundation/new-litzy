@@ -49,6 +49,39 @@ void main() {
     expect((thread.command as ThreadCommand).rootId, 'm1@example.invalid');
   });
 
+  test('import takes a local path and a format', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'import',
+      '--format',
+      'maildir',
+      'Maildir',
+    ]);
+
+    final command = parsed.command as ImportCommand;
+    expect(command.path, 'Maildir');
+    expect(command.format, MailImportFormat.maildir);
+  });
+
+  test('import needs a known format', () {
+    expect(
+      () => parseCommandLine(['--database', 'p.db', 'import', 'inbox.mbox']),
+      throwsA(isA<CliUsageException>()),
+    );
+    expect(
+      () => parseCommandLine([
+        '--database',
+        'p.db',
+        'import',
+        '--format',
+        'pst',
+        'inbox.pst',
+      ]),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
   test('triage sets read and starred flags on one message', () {
     final parsed = parseCommandLine([
       '--database',
