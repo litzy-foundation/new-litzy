@@ -208,6 +208,51 @@ sources:
     expect(result.stderr as String, contains('sync_failed'));
   });
 
+  test('triage flags persist across binary invocations', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final setup = LocalDatabase.open(harness.database);
+    setup.insertMessages([
+      MessageRecord(
+        id: 'm1@example.invalid',
+        listId: 'git@vger.kernel.org',
+        subject: 'subject',
+        fromAddress: 'author@example.invalid',
+        dateEpoch: 1000,
+        parentId: null,
+        threadRootId: 'm1@example.invalid',
+        body: 'body',
+        checksum: checksumOfBytes('body'.codeUnits),
+      ),
+    ]);
+    setup.close();
+
+    final first = await harness.run([
+      'triage',
+      'm1@example.invalid',
+      '--read',
+      '--star',
+    ]);
+    final second = await harness.run([
+      'triage',
+      'm1@example.invalid',
+      '--unstar',
+    ]);
+
+    expect(first.exitCode, 0);
+    expect(_jsonObject(first.stdout), {
+      'id': 'm1@example.invalid',
+      'read': true,
+      'starred': true,
+    });
+    expect(second.exitCode, 0);
+    expect(_jsonObject(second.stdout), {
+      'id': 'm1@example.invalid',
+      'read': true,
+      'starred': false,
+    });
+  });
+
   test('audit reports residual mail from a typed snapshot', () async {
     final harness = _Harness(root);
     addTearDown(harness.close);

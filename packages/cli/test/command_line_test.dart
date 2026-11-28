@@ -49,6 +49,55 @@ void main() {
     expect((thread.command as ThreadCommand).rootId, 'm1@example.invalid');
   });
 
+  test('triage sets read and starred flags on one message', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'triage',
+      'm1@example.invalid',
+      '--read',
+      '--star',
+    ]);
+
+    final command = parsed.command as TriageCommand;
+    expect(command.messageId, 'm1@example.invalid');
+    expect(command.read, isTrue);
+    expect(command.starred, isTrue);
+  });
+
+  test('a flag can be cleared', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'triage',
+      'm1@example.invalid',
+      '--unstar',
+    ]);
+
+    expect((parsed.command as TriageCommand).starred, isFalse);
+  });
+
+  test('conflicting triage flags are rejected', () {
+    expect(
+      () => parseCommandLine([
+        '--database',
+        'p.db',
+        'triage',
+        'm1',
+        '--read',
+        '--unread',
+      ]),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
+  test('triage needs at least one flag', () {
+    expect(
+      () => parseCommandLine(['--database', 'p.db', 'triage', 'm1']),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
   test('audit reads a snapshot from a file', () {
     final parsed = parseCommandLine([
       '--database',

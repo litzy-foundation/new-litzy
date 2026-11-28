@@ -39,6 +39,10 @@ final class EngineRequestHandler {
         return _thread(request);
       case AuditRequest():
         return _audit(request);
+      case SetTriageRequest():
+        return _setTriage(request);
+      case GetTriageRequest():
+        return _getTriage(request);
     }
   }
 
@@ -188,6 +192,65 @@ final class EngineRequestHandler {
         request.id,
         'audit_failed',
         'the inbox snapshot could not be audited',
+      );
+    }
+  }
+
+  LmlpResponse _setTriage(SetTriageRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    if (database.triageOf(request.messageId) == null) {
+      return ErrorResponse(
+        request.id,
+        'message_not_found',
+        'the message is not in the open profile',
+      );
+    }
+    try {
+      database.setTriage(
+        request.messageId,
+        read: request.state == TriageState.read ? request.enabled : null,
+        starred: request.state == TriageState.starred ? request.enabled : null,
+      );
+      final flags = database.triageOf(request.messageId)!;
+      return TriageResponse(
+        request.id,
+        request.messageId,
+        flags.read,
+        flags.starred,
+      );
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'triage_failed',
+        'the triage flag was not changed',
+      );
+    }
+  }
+
+  LmlpResponse _getTriage(GetTriageRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      final flags = database.triageOf(request.messageId);
+      if (flags == null) {
+        return ErrorResponse(
+          request.id,
+          'message_not_found',
+          'the message is not in the open profile',
+        );
+      }
+      return TriageResponse(
+        request.id,
+        request.messageId,
+        flags.read,
+        flags.starred,
+      );
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'triage_failed',
+        'the triage flags could not be read',
       );
     }
   }

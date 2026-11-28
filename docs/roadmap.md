@@ -157,13 +157,14 @@ read, reply and audit. Acceptance tests use the real binary and the real
 database.
 
 Partially landed: the `litzy` binary parses arguments, opens a profile and
-sends typed ping, sync, search, thread and audit requests through a real engine
-isolate. Each invocation prints structured JSON and closes its isolate, so no
+sends typed ping, sync, search, thread, triage and audit requests through a real
+engine isolate. Each invocation prints structured JSON and closes its isolate, so no
 engine state survives between processes. Acceptance tests drive the binary
 with a local NNTP fixture and check that a channel synced in one process can
 be searched and read in the next. The audit command reads a typed snapshot
-from a local file and prints the engine's verdict. Still to do: triage, reply
-and the local import commands.
+from a local file and prints the engine's verdict. Read and starred flags live
+in SQLite behind typed verbs, and the CLI changes them with explicit flags.
+Still to do: draft replies and the local import commands.
 
 ## S6 — Flutter GUI
 
