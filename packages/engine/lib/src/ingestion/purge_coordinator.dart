@@ -134,6 +134,10 @@ final class PurgeCoordinator {
   }
 
   /// Applies a preparation once, after rechecking its digest and content.
+  ///
+  /// A typed [MailboxException] reaches the caller unchanged so an engine
+  /// response keeps its stable failure code. Other mailbox failures remain a
+  /// [PurgeRejected] outcome and leave the preparation retryable.
   Future<PurgeOutcome> commit(PreparedPurge plan) async {
     final recorded = database.preparationDigestOf(plan.id);
     if (recorded == null || recorded != _digest(plan.accepted)) {
@@ -167,6 +171,8 @@ final class PurgeCoordinator {
         case MailboxAction.expunge:
           await mailbox.expunge(uids);
       }
+    } on MailboxException {
+      rethrow;
     } catch (error) {
       return PurgeRejected('mailbox action failed: $error');
     }

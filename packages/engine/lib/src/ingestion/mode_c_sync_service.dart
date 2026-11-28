@@ -7,7 +7,7 @@ import '../storage/local_database.dart';
 import '../storage/sync_cursor.dart';
 import 'catalog.dart';
 import 'channel_mapper.dart';
-import 'mode_c_ingestor.dart';
+import 'list_message_ingestor.dart';
 import 'nntp_client.dart';
 import 'public_inbox_client.dart';
 
@@ -46,7 +46,7 @@ final class ModeCSyncService {
       }
     }
     if (source == null) {
-      throw ModeCIngestException(
+      throw ListMessageIngestException(
         'unknown_source',
         'source $sourceId is not in the catalogue',
       );
@@ -58,7 +58,7 @@ final class ModeCSyncService {
         : await _fetchFromInbox(channel, cursor);
     final count = fetched.messages.isEmpty
         ? 0
-        : ModeCIngestor(
+        : ListMessageIngestor(
             database: database,
             blobs: blobs,
           ).ingest(channel, fetched.messages);

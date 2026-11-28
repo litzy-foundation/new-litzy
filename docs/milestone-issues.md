@@ -91,7 +91,7 @@ request rules on GitHub. The mirror remains an offline copy without policy.
 R25 and ADR-0005 require Drift for SQLite threading. Drift 2.35 resolves in
 this workspace with `drift` 2.35.4, `drift_dev` 2.35.3 and `sqlite3` 3.9.2,
 but its custom selects, writes and transactions all return futures. The
-current `LocalDatabase`, `BlobStore` and `ModeCIngestor.ingest` are
+current `LocalDatabase`, `BlobStore` and `ListMessageIngestor.ingest` are
 synchronous, so Drift cannot replace the statements as a drop-in change. A
 faithful mapping would convert the storage and blob ports to async and
 update the engine and the tests that read the database directly. Status:

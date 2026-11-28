@@ -4,13 +4,29 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:engine/engine.dart';
 
+final class _MailboxFailure implements MailboxException {
+  const _MailboxFailure(this.code, this.message);
+
+  @override
+  final String code;
+
+  @override
+  final String message;
+}
+
 final class FakeMailbox implements MailboxPort {
   final List<String> calls = <String>[];
 
   bool failNext = false;
 
+  bool failTypedNext = false;
+
   @override
   Future<void> moveToFolder(List<String> uids, String folder) async {
+    if (failTypedNext) {
+      failTypedNext = false;
+      throw const _MailboxFailure('unavailable', 'the folder is unavailable');
+    }
     if (failNext) {
       failNext = false;
       throw StateError('folder is unavailable');
@@ -231,6 +247,31 @@ void main() {
     expect(failed, isA<PurgeRejected>());
     expect(retry, isA<PurgeApplied>());
     expect(harness.mailbox.calls, ['move:Litzy/Ingested:1']);
+  });
+
+  test('a typed mailbox failure reaches the caller with its code', () async {
+    final harness = _Harness();
+    addTearDown(harness.close);
+    final candidate = _store(harness, 'm1', '1');
+    final plan = await harness.coordinator.prepare(
+      'd9',
+      'git@vger.kernel.org',
+      [candidate],
+    );
+    harness.mailbox.failTypedNext = true;
+
+    await expectLater(
+      harness.coordinator.commit(plan),
+      throwsA(
+        isA<MailboxException>().having(
+          (error) => error.code,
+          'code',
+          'unavailable',
+        ),
+      ),
+    );
+    expect(harness.database.isPreparationConsumed(plan.id), isFalse);
+    expect(harness.mailbox.calls, isEmpty);
   });
 
   test('a policy applies only to the list that opted in', () async {

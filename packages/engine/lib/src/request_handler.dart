@@ -7,6 +7,7 @@ import 'ingestion/audit_service.dart';
 import 'ingestion/draft_service.dart';
 import 'ingestion/local_import_service.dart';
 import 'ingestion/local_mail_parser.dart';
+import 'ingestion/mode_b_sync_service.dart';
 import 'ingestion/mode_c_sync_service.dart';
 import 'storage/blob_store.dart';
 import 'storage/local_blob_store.dart';
@@ -34,6 +35,8 @@ final class EngineRequestHandler {
         return _open(request);
       case SyncRequest():
         return _sync(request);
+      case ImapSyncRequest():
+        return _syncImap(request);
       case IngestRequest():
         return _ingest(request);
       case SearchRequest():
@@ -98,6 +101,34 @@ final class EngineRequestHandler {
         request.id,
         'sync_failed',
         'the channel could not be refreshed: $error',
+      );
+    }
+  }
+
+  Future<LmlpResponse> _syncImap(ImapSyncRequest request) async {
+    final database = _database;
+    final blobs = _blobs;
+    if (database == null || blobs == null) return _notOpen(request.id);
+    try {
+      final result = await ModeBSyncService(
+        database: database,
+        blobs: blobs,
+      ).sync(request);
+      return ImapSyncResponse(
+        request.id,
+        result.count,
+        result.snapshot,
+        result.action,
+        result.actedUids,
+        result.quarantined,
+      );
+    } on ModeBSyncException catch (error) {
+      return ErrorResponse(request.id, error.code, error.message);
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'imap_sync_failed',
+        'the mailbox could not be synchronised',
       );
     }
   }

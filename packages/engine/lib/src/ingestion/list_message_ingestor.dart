@@ -8,10 +8,10 @@ import '../storage/message_record.dart';
 import 'message_headers.dart';
 import 'public_inbox_client.dart';
 
-/// Reports a Mode C message that cannot be trusted or persisted.
-final class ModeCIngestException implements Exception {
+/// Reports a list message that cannot be trusted or persisted.
+final class ListMessageIngestException implements Exception {
   /// Creates an exception with a stable [code] and a readable [message].
-  const ModeCIngestException(this.code, this.message);
+  const ListMessageIngestException(this.code, this.message);
 
   /// Stable failure code such as `list_id_mismatch`.
   final String code;
@@ -20,18 +20,18 @@ final class ModeCIngestException implements Exception {
   final String message;
 
   @override
-  String toString() => 'mode C ingestion failed ($code): $message';
+  String toString() => 'list ingestion failed ($code): $message';
 }
 
-/// Persists fetched public messages into the selected channel.
+/// Persists verified list messages into the selected channel.
 ///
-/// Every message must carry the list identifier declared by the catalogue,
-/// which keeps list mail out of a personal mailbox as required by R15. The
+/// Every message must carry the list identifier selected for the channel,
+/// which keeps list mail separate from personal mail as required by R15. The
 /// raw source is stored by digest before the SQLite batch commits, so the
 /// purge coordinator can later verify it as required by R16.
-final class ModeCIngestor {
+final class ListMessageIngestor {
   /// Creates an ingestor over the local store and blob folder.
-  const ModeCIngestor({required this.database, required this.blobs});
+  const ListMessageIngestor({required this.database, required this.blobs});
 
   /// Local database holding channels, messages and the search index.
   final LocalDatabase database;
@@ -43,7 +43,10 @@ final class ModeCIngestor {
   int ingest(ChannelRecord channel, Iterable<RawMessage> messages) {
     final incoming = messages.toList(growable: false);
     if (incoming.isEmpty) {
-      throw const ModeCIngestException('empty_batch', 'no messages to ingest');
+      throw const ListMessageIngestException(
+        'empty_batch',
+        'no messages to ingest',
+      );
     }
     final roots = <String, String>{};
     final rawById = <String, List<int>>{};
@@ -51,27 +54,27 @@ final class ModeCIngestor {
     for (final message in incoming) {
       final rawBytes = utf8.encode(message.raw);
       if (checksumOfBytes(rawBytes) != message.checksum) {
-        throw const ModeCIngestException(
+        throw const ListMessageIngestException(
           'checksum_mismatch',
           'the raw message does not match its digest',
         );
       }
       final listId = headerIdentifier(message.headers['list-id']);
       if (listId.isEmpty) {
-        throw const ModeCIngestException(
+        throw const ListMessageIngestException(
           'missing_list_id',
           'the message has no List-Id header',
         );
       }
       if (listId != channel.listId) {
-        throw ModeCIngestException(
+        throw ListMessageIngestException(
           'list_id_mismatch',
           'expected ${channel.listId} but found $listId',
         );
       }
       final messageId = headerIdentifier(message.headers['message-id']);
       if (messageId.isEmpty) {
-        throw const ModeCIngestException(
+        throw const ListMessageIngestException(
           'invalid_message_id',
           'the message has no usable Message-ID',
         );
@@ -107,7 +110,7 @@ final class ModeCIngestor {
     try {
       database.insertMessages(records);
     } catch (_) {
-      throw const ModeCIngestException(
+      throw const ListMessageIngestException(
         'persistence_failed',
         'the message batch was not persisted',
       );
