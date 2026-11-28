@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:protocol/protocol.dart';
 
 import 'ingestion/audit_service.dart';
+import 'ingestion/local_import_service.dart';
+import 'ingestion/local_mail_parser.dart';
 import 'ingestion/mode_c_sync_service.dart';
 import 'storage/blob_store.dart';
 import 'storage/local_blob_store.dart';
@@ -39,6 +41,8 @@ final class EngineRequestHandler {
         return _thread(request);
       case AuditRequest():
         return _audit(request);
+      case ImportRequest():
+        return _import(request);
       case SetTriageRequest():
         return _setTriage(request);
       case GetTriageRequest():
@@ -192,6 +196,27 @@ final class EngineRequestHandler {
         request.id,
         'audit_failed',
         'the inbox snapshot could not be audited',
+      );
+    }
+  }
+
+  LmlpResponse _import(ImportRequest request) {
+    final database = _database;
+    final blobs = _blobs;
+    if (database == null || blobs == null) return _notOpen(request.id);
+    try {
+      final count = ImportService(
+        database: database,
+        blobs: blobs,
+      ).importMessages(request.path, request.format);
+      return ImportResponse(request.id, count);
+    } on ImportException catch (error) {
+      return ErrorResponse(request.id, error.code, error.message);
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'import_failed',
+        'the local mail could not be imported',
       );
     }
   }

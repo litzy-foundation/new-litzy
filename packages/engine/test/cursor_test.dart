@@ -243,8 +243,8 @@ void main() {
     final database = LocalDatabase.inMemory();
     addTearDown(database.close);
 
-    database.setCursor('git', SyncCursor(articleNumber: 5));
-    database.setCursor('other', SyncCursor(articleNumber: 9));
+    database.setCursor('git', const SyncCursor(articleNumber: 5));
+    database.setCursor('other', const SyncCursor(articleNumber: 9));
 
     expect(database.cursorOf('git')!.articleNumber, 5);
     expect(database.cursorOf('other')!.articleNumber, 9);

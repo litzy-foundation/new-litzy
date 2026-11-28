@@ -5,7 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
-import '../storage/local_database.dart';
+import 'local_mail_parser.dart';
 
 /// Reports a failed public-inbox request with its HTTP status, or zero for a
 /// local failure such as a malformed document.
@@ -107,7 +107,13 @@ final class PublicInboxClient {
     } on ArchiveException catch (error) {
       throw PublicInboxException(0, 'invalid mbox archive: ${error.message}');
     }
-    return _parseMbox(utf8.decode(bytes, allowMalformed: true));
+    try {
+      return LocalMailParser.parseMbox(
+        utf8.decode(bytes, allowMalformed: true),
+      );
+    } on ImportException catch (error) {
+      throw PublicInboxException(0, error.message);
+    }
   }
 
   Future<http.Response> _get(Uri url) => http
@@ -117,53 +123,4 @@ final class PublicInboxClient {
         onTimeout: () =>
             throw const PublicInboxException(0, 'request timed out'),
       );
-
-  static List<RawMessage> _parseMbox(String text) {
-    final blocks = <List<String>>[];
-    List<String>? current;
-    for (final line in text.split('\n')) {
-      if (line.startsWith('From ')) {
-        if (current != null) {
-          while (current.isNotEmpty && current.last.isEmpty) {
-            current.removeLast();
-          }
-          blocks.add(current);
-        }
-        current = <String>[line];
-      } else if (current != null) {
-        current.add(line);
-      }
-    }
-    if (current != null) {
-      while (current.isNotEmpty && current.last.isEmpty) {
-        current.removeLast();
-      }
-      blocks.add(current);
-    }
-    return blocks.map(_parseBlock).toList();
-  }
-
-  static RawMessage _parseBlock(List<String> block) {
-    final separator = block.indexOf('');
-    if (separator < 1) {
-      throw const PublicInboxException(0, 'mbox message has no header block');
-    }
-    final headerLines = block.getRange(1, separator).toList();
-    final bodyLines = block.skip(separator + 1).toList();
-    final headers = <String, String>{};
-    for (final line in headerLines) {
-      final colon = line.indexOf(':');
-      if (colon < 0) continue;
-      headers[line.substring(0, colon).toLowerCase()] = line
-          .substring(colon + 1)
-          .trim();
-    }
-    final raw = <String>[...headerLines, '', ...bodyLines].join('\n');
-    return RawMessage(
-      headers: headers,
-      body: bodyLines.join('\n'),
-      raw: raw,
-      checksum: checksumOfBytes(utf8.encode(raw)),
-    );
-  }
 }

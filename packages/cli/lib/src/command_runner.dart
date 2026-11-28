@@ -69,6 +69,9 @@ Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
     ],
     SearchCommand(:final terms) => [SearchRequest(id, terms)],
     ThreadCommand(:final rootId) => [ThreadRequest(id, rootId)],
+    ImportCommand(:final path, :final format) => [
+      ImportRequest(id, path, format),
+    ],
     TriageCommand(:final messageId, :final read, :final starred) => [
       if (read != null) SetTriageRequest(id, messageId, TriageState.read, read),
       if (starred != null)
@@ -109,6 +112,10 @@ CliResult _format(LmlpResponse response) => switch (response) {
           )
           .toList(),
     }),
+  ),
+  ImportResponse(:final count) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({'count': count}),
   ),
   TriageResponse(:final messageId, :final read, :final starred) => CliResult(
     exitCode: 0,

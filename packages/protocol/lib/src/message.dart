@@ -102,6 +102,15 @@ enum BlobBackend {
   sqlite,
 }
 
+/// Local mailbox format accepted by the import verb.
+enum MailImportFormat {
+  /// A folder with `cur` and `new` message files.
+  maildir,
+
+  /// A single file with `From ` envelope lines.
+  mbox,
+}
+
 /// One mutable flag in the local triage state.
 enum TriageState {
   /// Whether the message has been read.
@@ -174,6 +183,18 @@ final class ThreadRequest extends LmlpRequest {
 
   /// Identifier of the thread root.
   final String rootId;
+}
+
+/// Imports local Maildir or mbox mail into the open profile.
+final class ImportRequest extends LmlpRequest {
+  /// Creates an import request for [path] in [format].
+  const ImportRequest(super.id, this.path, this.format);
+
+  /// Path of the local Maildir folder or mbox file.
+  final String path;
+
+  /// Format used to parse the source.
+  final MailImportFormat format;
 }
 
 /// Changes one triage flag on one persisted message.
@@ -279,6 +300,15 @@ final class ThreadResponse extends LmlpResponse {
 
   /// Messages in pre-order.
   final List<MessageData> messages;
+}
+
+/// Reports how many new messages an import persisted.
+final class ImportResponse extends LmlpResponse {
+  /// Creates an import response with [count] persisted messages.
+  const ImportResponse(super.id, this.count);
+
+  /// Number of new messages persisted by the import.
+  final int count;
 }
 
 /// Reports both triage flags of one persisted message.
