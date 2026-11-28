@@ -110,6 +110,27 @@ versioned file or a `.env` file.
     reads the password from the keychain through `CredentialVault` and speaks
     RFC LOGIN. Plain sockets are limited to loopback fixtures. The typed Mode B
     verb lands before its CLI command, which waits for a platform `SecretStore`.
+34. Pure local contract (R40): `protocol` is Dart interfaces, immutable values
+    and streams only, with no wire protocol, serialisation or remote framing.
+    The engine is a local isolate behind `LmlpEngine`.
+35. Public lists first (R41): NNTP and public-inbox replace the permanently
+    removed inbound SMTP listener. The Git list is readable without an account.
+36. Filesystem blobs (R42): SQLite holds metadata and FTS5; raw compressed
+    `.eml` files live in a content-addressed local folder through `BlobStore`.
+37. Opt-in purge (R43): IMAP defaults to move or mark as seen; physical
+    `EXPUNGE` needs an explicit per-list decision plus the verification gate.
+38. SQLite concurrency (R44): every open sets WAL and a five second busy
+    timeout before schema access, with no daemon and no server process.
+39. Credential-free dogfooding (R45): the next vertical slice reads
+    `git@vger.kernel.org` in CLI and GUI using local fixtures and public data.
+40. Chat-like reading (R46): channels, topic feed and branch-aware thread pane,
+    with quote folding, diff rendering, selection quoting and Ctrl+Enter send.
+41. Clean code (R47): one public class per file, keys instead of literal
+    values, Fluent text, YAML data and separate `.sql` schema files.
+42. Import and export (R48): explicit transfer plus declarative automatic
+    rules, never bypassing the verification gate.
+43. Discoverability (R49): one accurate public description and a small set of
+    truthful tags for the local-first mailing list reader.
 
 ## Fixed operational rules
 

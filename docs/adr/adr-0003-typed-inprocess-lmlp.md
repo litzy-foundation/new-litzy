@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted on 2026-11-28. This decision implements R32 and closes Q5.
+Accepted on 2026-11-28. This decision implements R32 and closes Q5. The wire
+framing language and the version negotiation in this record are superseded by
+ADR-0016. The typed in-process boundary itself remains.
 
 ## Context
 
@@ -27,6 +29,5 @@ implemented.
 A single engine and a single protocol serve both front-ends without
 duplicated logic. Messages keep their types across the boundary and are
 checked exhaustively. The isolatemust be started by each front-end in the
-same way, and every message type remains part of a versioned protocol so
-that a client and an engine built from different revisions fail clearly
-rather than silently misbehaving.
+same way. ADR-0016 removes the version negotiation and the wire vocabulary,
+because one build ships the front-end and the engine together.

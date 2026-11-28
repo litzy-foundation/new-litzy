@@ -18,8 +18,8 @@ filters and agents. Mode C adapters and the RSS source are ordinary plugins
 behind that surface, as is the local summarizer. A plugin cannot bypass the
 storage policy or the trust chain. The summarizer runs only on the user's
 machine, adapts to available hardware, supports several local models and
-produces brief output. The removed Mode A may return only as a plugin after
-a new decision.
+produces brief output. The removed Mode A cannot return without a new
+maintainer decision, as closed in Q6 and recorded in ADR-0018.
 
 ## Consequences
 

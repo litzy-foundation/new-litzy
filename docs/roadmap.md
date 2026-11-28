@@ -175,11 +175,69 @@ duplicates. The reply command builds a quoted draft in the engine and stores it
 in SQLite under one identifier per source message. Sending stays in the
 outbound slice.
 
+## S9 — Local-only contract and storage cleanup
+
+The maintainer reset the order after S5, so this section takes precedence over
+the older labels S6 through S8, which remain as historical scope. The slice
+records R40 through R49, ADR-0016 through ADR-0020 and the updated architecture
+before code changes. It then turns `protocol` into a pure Dart engine contract,
+removes the compressed SQLite blob backend from the active path, moves raw
+messages to a content-addressed compressed folder, extracts the schema into
+`.sql` files and sets WAL with a five second busy timeout on every open. Tests
+prove that an existing SQLite blob migrates byte for byte and that two real
+processes can share one profile.
+
+## S14 — Presentation algorithms in core
+
+Restore `JwzThreadBuilder` and `QuoteAndDiffAnalyzer` from the preserved
+backup into `packages/core`, keeping their coverage for missing parents,
+reference cycles, duplicate identifiers, nested quotes and unified diffs.
+Adapt their inputs to the current protocol values and remove any dependency
+on algorithms that were not carried into the rebuild. This closes Q13 and
+supplies the S10 thread display and the S11 folding and diff rendering without
+reimplementing tested behaviour.
+
+## S10 — Credential-free Git reading in the CLI
+
+Give the terminal client a default catalogue path and a direct way to follow
+`git@vger.kernel.org` through public-inbox or NNTP without credentials. Add
+commands to list channels and threads and to show one reconstructed thread.
+The path reads public data only and does not touch IMAP, SMTP or a keychain.
+Acceptance tests use the real binary, the real engine and local fixtures that
+serve an Atom feed, a gzipped mbox and an NNTP conversation.
+
+## S11 — Chat-like read-only GUI
+
+Create `packages/l10n` and `packages/app`, then build the read-only interface
+of ADR-0020 on desktop and mobile. The left pane holds catalogue channels and
+cross-channel triage views, the centre pane holds topics ordered by last
+activity, and the right pane holds a branch-aware conversation. Citation
+folding and monospace diff blocks are part of the first version. The composer
+is not active until S8, but its To and Cc preview shape is defined now. Tests
+check adaptive layout, thread navigation and that no user-visible string is
+hardcoded.
+
+## S12 — Import, export and automatic transfer
+
+Add explicit import and export of profile data plus declarative automatic
+rules under `data/`. Formats and triggers are chosen from Q10 before code is
+written. Automatic transfer never bypasses the verification gate of R15. Tests
+cover round trips, malformed input and a rule that refuses a destructive
+mailbox action.
+
+## S13 — Discoverability metadata
+
+Choose the public description and tags from Q11, then add them to the
+repository and package metadata. The wording describes a local-first mailing
+list reader for technical lists and makes no claim about unimplemented
+features.
+
 ## S6 — Flutter GUI
 
 Build the adaptive master-detail GUI on desktop and mobile, using the same
 protocol. Include channel selection from the local catalogue and thread
-reading. Package for Linux first, then the other targets.
+reading. Package for Linux first, then the other targets. This heading is
+superseded by S11.
 
 ## S7 — Plugins and local agent
 

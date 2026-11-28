@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted on 2026-11-28. This decision implements R34.
+Accepted on 2026-11-28. This decision implements R34. The compressed SQLite
+blob option is superseded by ADR-0017; the content-addressed folder remains
+and becomes the only active backend.
 
 ## Context
 

@@ -22,5 +22,13 @@ nothing and is tracked in the roadmap or the problem register. Prefer final
 classes, const constructors and immutable values. Order a file by cohesion,
 keep one concept per file and avoid dumping grounds.
 
+One source file defines one public class with one reason to change. Code refers
+to keys rather than literal values. Declarative values live in YAML, the schema
+lives in separate `.sql` files and user-visible text lives in Fluent resources.
+Newline, tab and null characters are expressed through named representations
+rather than raw literals when a named form is available. A valid focused patch
+is accepted on its merits without ceremony beyond the permanent pull request
+rules.
+
 Before committing, format the source, run analysis at zero issues, check the
 diff for forbidden markers and verify that failure paths are tested.

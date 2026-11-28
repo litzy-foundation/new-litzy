@@ -366,6 +366,127 @@ value. Add the CLI command when a platform SecretStore adapter exists." No
 password flag, environment variable or interactive prompt is added to the CLI
 in this slice. The decision is recorded in ADR-0015.
 
+## R40 — Pure in-process Dart contract
+
+The maintainer stated: "Taglia il wire protocol LMLP e InboundSmtpListener
+(Mode A)" and "Trasforma protocol in un contratto puramente in-process
+(interfacce Dart + Stream reattivi tra un background Isolate e la UI/CLI)".
+The package named `protocol` remains the shared contract, but it contains
+only Dart interfaces, immutable values and reactive streams. There is no
+serialisation format, no remote procedure call layer, no WebSocket framing,
+no protocol version handshake and no wire vocabulary. The engine is exposed
+as an asynchronous `LmlpEngine` interface implemented on a dedicated isolate;
+`SendPort` and `ReceivePort` are implementation details of that local hop and
+not a protocol a front-end can send over a network. This supersedes the wire
+framing language retained in R32 and `docs/lmlp-protocol.md`, while preserving
+the typed in-process boundary itself. The decision is in ADR-0016.
+
+## R41 — Public lists first, no inbound listener
+
+The maintainer stated: "Sostituisci Mode A con un ingestor NNTP /
+Public-Inbox" and "in pratica elimina tutta la parte infra/server nostra, solo
+client". Mode A, the inbound SMTP listener, is permanently removed and cannot
+return as a plugin without a new explicit decision. This closes Q6. The first
+reading experience comes from NNTP or public-inbox mirrors such as
+`nntp.lore.kernel.org` and `lore.kernel.org`, so `git@vger.kernel.org` can be
+read without an email account, a domain or credentials. IMAP remains an
+optional Mode B source for people who want their own mailbox. The decision is
+in ADR-0018.
+
+## R42 — Raw messages live on the filesystem
+
+The maintainer stated: "Non salvare i blob .eml dentro il file SQLite". SQLite
+keeps metadata, triage state, cursors, thread relations and the FTS5 index.
+Raw messages are compressed on disk in a content-addressed folder shaped like
+`blobs/ab/cd/<sha256>.eml.gz`, reached through the existing `BlobStore` port.
+The compressed SQLite blob backend from R34 is superseded and is not the
+default for any new profile. This keeps WAL checkpoints, vacuum and the FTS5
+cache free of large message bodies. Existing profiles are migrated rather
+than losing content. The decision is in ADR-0017.
+
+## R43 — Purge stays opt-in on a local client
+
+The maintainer stated: "Rendi l'EXPUNGE su IMAP opt-in, non il comportamento
+predefinito". A local client cannot assume a server backup, so the default
+IMAP action moves a message to a dedicated archive folder or marks it as
+seen. Physical `EXPUNGE` requires an explicit per-list decision and still
+passes the two-phase commit and SHA-256 gate of R15. This reinforces R15 and
+does not weaken it.
+
+## R44 — SQLite concurrency between front-ends
+
+The maintainer stated: "Gestisci subito la concorrenza SQLite tra CLI
+(litzy) e GUI (litzy-gui)". Every database open sets `journal_mode=WAL` and
+`busy_timeout=5000` before schema access. A busy database must produce a
+deterministic error rather than an unhandled process failure. A shared
+write lock is added only if the two pragmas prove insufficient in an
+acceptance test. No daemon or server process is introduced. The decision is
+in ADR-0019.
+
+## R45 — Credential-free dogfooding of the Git list
+
+The maintainer stated: "proviamo quindi a leggere i mailing list di git.git
+(git@vger.kernel.org), sia cli che gui, devi fare tu i test che non richiedono
+credenziali". The next vertical slice reads that public list through the CLI
+and the GUI using public data only. Tests use local fixtures and recorded
+public messages, never an account, password or OAuth token. Reading is
+separated from sending, so the slice does not depend on SMTP or on a platform
+keychain adapter. The decision is tracked in the roadmap.
+
+## R46 — Slack-like reading, Zulip-like thread depth
+
+The maintainer defined the interface as "a metà tra Slack e Zulip": a left
+sidebar of catalogue channels plus the cross-channel views for own threads,
+unread mail and awaiting reply; a centre feed of topics ordered by last
+activity with patch badges, unread counts and triage state; and a right pane
+where a conversation reads like chat while preserving reply branches. Quote
+folding collapses deeper citation levels by default, diffs render in
+monospace with clear colour, selection can be quoted into the composer, and
+sending uses Ctrl+Enter with a visible To and Cc preview rather than a bare
+Enter. The maintainer added "conferme a non finire poi": the interface must
+be defined once and then implemented, without repeated confirmation loops.
+The decision is in ADR-0020.
+
+## R47 — Clean local code conventions
+
+The maintainer stated: "se la patch è valida, è valida e basta come principio"
+and "1 file -> 1 classe (1 funzionalità, pulito)". A valid, focused patch is
+accepted on its merits without ceremony beyond the permanent pull request
+rules. One source file defines one public class with one reason to change.
+The maintainer also stated: "no stringhe hardcoded di ogni tipo, tutte in
+file esterni", "db in file .sql a parte", "no valori, solo chiavi, no cose
+come \n \t \0 nel codice, usa cose fatte bene , ste cose mi sanno ti
+zozzimma, tutto pulitissimo, tutto in yml". Code refers to keys rather than
+literal values; user-visible text lives in Fluent resources, declarative
+values in YAML and the schema in separate `.sql` files. Newline, tab and null
+characters are never written as raw literals in source when a named
+representation is possible. These conventions update the clean-code,
+localisation and data-separation skills.
+
+## R48 — Import, export and automatic transfer
+
+The maintainer stated: "aggiungiamo la possibilità di import/export,
+autoimport/autoexport". Litzy offers explicit import and export of profile
+data and supports declarative automatic transfer rules. The first transfer
+slice uses mbox and Maildir for import and mbox for export, because both
+formats already exist in the local import path and need no remote service.
+Automatic rules are versioned YAML under `data/rulesets` and run when a sync
+completes; they write to a declared local directory and never perform a
+destructive mailbox action without the existing verification gate. This
+closes Q10 and is tracked in S12.
+
+## R49 — Discoverability of the project
+
+The maintainer stated: "definisci la descrizione giusta ed anche i tag giusti
+per farmi trovare, voglio indicizzarmi, voglio fare un sacco di like e
+utilizzatori". The project needs an accurate public description and a small
+set of discoverability tags that describe a local-first mailing list reader
+for technical lists. The description and the topics are defined in
+`data/metadata/discoverability.yaml` and mirrored in the README. They are
+then applied to the GitHub repository description and topics, which closes
+Q11 and is tracked in S13. Claims must match implemented behaviour; a
+planned feature is never advertised as present.
+
 ## Open questions
 
 | # | Question | Status |
@@ -374,6 +495,17 @@ in this slice. The decision is recorded in ADR-0015.
 | Q2 | iOS builds need macOS tooling. Should CI use a macOS runner or should builds stay manual? | Open |
 | Q3 | Should client-side rulesets be available offline? | Open |
 | Q4 | Which SPDX license applies to the contributors named in the copyright notice? | Open |
-| Q5 | Should the GUI and CLI share the engine in-process or over local IPC? | Closed by R32: in-process typed LMLP |
-| Q6 | Can the former inbound SMTP listener return as a plugin? | Open, requires a new ADR after R23 |
+| Q5 | Should the GUI and CLI share the engine in-process or over local IPC? | Closed by R32 and refined by R40: one local Dart isolate, no wire protocol |
+| Q6 | Can the former inbound SMTP listener return as a plugin? | Closed by R41: permanently removed until a new maintainer decision |
 | Q7 | Should cloud archiving ever be enabled, and who would operate it? | Parked by R20 |
+| Q8 | Which literals must be moved out of source besides user-visible text, especially protocol delimiters and control characters? | Open, needs an explicit choice under R47 |
+| Q9 | Should the Flutter GUI package be created now, or should the first credential-free slice prove the CLI against real Git list data? | Closed by the maintainer's explicit request for both: CLI first in S10, GUI next in S11, as recorded in R45 |
+| Q10 | Which formats and triggers do import, export, autoimport and autoexport use in the first slice? | Closed by R48: mbox and Maildir import, mbox export, YAML rules triggered after sync |
+| Q11 | Where are the public description and discoverability tags published? | Closed by R49: versioned YAML, README and GitHub repository metadata in S13 |
+| Q12 | Is WAL with a five second busy timeout enough, or is a shared write lock needed from the first two-front-end test? | Open, recorded by R44 and tested in S9 |
+| Q13 | Should the thread builder and quote or diff analyzer be restored from the preserved backup or reimplemented against the current engine contract? | Closed: restore and adapt the preserved algorithms in S14, because their tests cover hostile reference chains and real patch bodies |
+
+Decisions recorded in this cycle close the questions about front-end order,
+transfer formats, publication place and algorithm provenance. Q8 and Q12 stay
+open because their answers require a tested code slice rather than a naming
+choice.
