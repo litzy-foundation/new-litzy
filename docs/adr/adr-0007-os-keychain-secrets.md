@@ -33,3 +33,9 @@ engine needs a small platform port for keychain access, which must be
 faked in tests and implemented per platform. Credentials entered through
 the environment are never persisted by the application unless the user
 explicitly asks for that.
+
+The first implementation provides the two ports and a credential vault in
+`packages/security`. The vault handles OAuth exchange, secure password entry,
+reading and forgetting, with deterministic failure codes. Its tests use
+in-memory fakes. The platform adapters and the browser redirect handling are
+still to be added, so no real secret is stored by this slice.

@@ -1,0 +1,8 @@
+name: security
+description: In-app credential flow with keychain and OAuth ports for Litzy front-ends.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.1
+dev_dependencies:
+  test: ^1.33.0

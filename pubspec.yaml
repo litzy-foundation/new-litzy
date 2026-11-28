@@ -8,6 +8,7 @@ workspace:
   - packages/protocol
   - packages/engine
   - packages/cli
+  - packages/security
 
 dev_dependencies:
   lints: ^6.1.0
@@ -42,3 +43,8 @@ melos:
       packageFilters:
         scope:
           - cli
+    test:security:
+      exec: dart test
+      packageFilters:
+        scope:
+          - security
