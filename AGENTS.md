@@ -145,6 +145,9 @@ versioned file or a `.env` file.
 48. App style and baseline (R54): one declarative style across all targets,
     plus the identity, setup, settings, states and secure lifecycle that make
     Litzy a real application.
+49. Password access first (R55): the first user-facing access flow uses an
+    obscured form or a non-echoing prompt and the OS keychain; OAuth-only
+    providers are tracked in P24 and need no provider table.
 
 ## Fixed operational rules
 

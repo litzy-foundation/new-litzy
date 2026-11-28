@@ -54,6 +54,13 @@ String _fixture(Directory root, String name) => File(
   return (channelId: channel.id, topicCount: topicCount);
 }
 
+void _createEmptyProfile(Directory directory) {
+  final database = LocalDatabase.open(
+    '${directory.path}${Platform.pathSeparator}litzy.db',
+  );
+  database.close();
+}
+
 void main() {
   test('the compiled GUI binary loads a real Git profile', () async {
     final root = _litzyRoot();
@@ -116,4 +123,66 @@ void main() {
       process.kill();
     }
   });
+
+  test(
+    'the compiled GUI binary opens account setup without an account',
+    () async {
+      final root = _litzyRoot();
+      final binary = File(
+        '${root.path}${Platform.pathSeparator}packages${Platform.pathSeparator}'
+        'app${Platform.pathSeparator}build${Platform.pathSeparator}'
+        'linux${Platform.pathSeparator}x64${Platform.pathSeparator}debug'
+        '${Platform.pathSeparator}bundle${Platform.pathSeparator}litzy_gui',
+      );
+      if (!binary.existsSync()) {
+        fail('build the Linux GUI binary before running binary acceptance');
+      }
+      final directory = Directory.systemTemp.createTempSync('litzy-gui-setup');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      _createEmptyProfile(directory);
+
+      final environment = Map<String, String>.from(Platform.environment);
+      environment[AppEnvironmentKeys.profilePath] =
+          '${directory.path}${Platform.pathSeparator}litzy.db';
+      environment[AppEnvironmentKeys.acceptance] = AppEnvironmentKeys.enabled;
+      final process = await Process.start(
+        binary.path,
+        const <String>[],
+        workingDirectory: root.path,
+        environment: environment,
+      );
+      final stderr = StringBuffer();
+      process.stderr.transform(utf8.decoder).listen(stderr.write);
+
+      try {
+        final output = <String>[];
+        final reported = Completer<void>();
+        final subscription = process.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())
+            .listen((line) {
+              output.add(line);
+              if (!reported.isCompleted &&
+                  output.contains(AppRequestKeys.ready) &&
+                  output.contains(AppRequestKeys.setupRequired)) {
+                reported.complete();
+              }
+            });
+        await reported.future.timeout(
+          const Duration(seconds: 30),
+          onTimeout: () => fail('the GUI binary did not open setup: $stderr'),
+        );
+        await subscription.cancel();
+
+        expect(output, contains(AppRequestKeys.ready));
+        expect(output, contains(AppRequestKeys.setupRequired));
+        expect(
+          output.where((line) => line.startsWith('${AppRequestKeys.failure}=')),
+          isEmpty,
+        );
+      } finally {
+        process.kill();
+      }
+    },
+  );
 }

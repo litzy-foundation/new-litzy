@@ -68,6 +68,8 @@ final class EngineRequestHandler {
         return _discover(request);
       case ConnectAccountRequest():
         return _connect(request);
+      case ListAccountsRequest():
+        return _accounts(request);
       case IngestRequest():
         return _ingest(request);
       case SearchRequest():
@@ -195,10 +197,16 @@ final class EngineRequestHandler {
     final database = _database;
     if (database == null) return _notOpen(request.id);
     try {
+      final policy = _policy ?? AccessPolicyFile.read();
       final service = AccountSetupService(
         database: database,
-        verifier: _loginCheck ?? const ImapLoginVerifier(),
-        policy: _policy ?? AccessPolicyFile.read(),
+        verifier:
+            _loginCheck ??
+            ImapLoginVerifier(
+              allowLoopbackPlaintextFixtures:
+                  policy.allowLoopbackPlaintextFixtures,
+            ),
+        policy: policy,
       );
       final record = await service.connect(request);
       return ConnectAccountResponse(
@@ -214,6 +222,38 @@ final class EngineRequestHandler {
         request.id,
         'connect_failed',
         'the account could not be connected',
+      );
+    }
+  }
+
+  LmlpResponse _accounts(ListAccountsRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      return AccountListResponse(
+        request.id,
+        database
+            .accounts()
+            .map(
+              (account) => (
+                id: account.id,
+                email: account.email,
+                imapHost: account.imapHost,
+                imapPort: account.imapPort,
+                smtpHost: account.smtpHost,
+                smtpPort: account.smtpPort,
+                authentication: account.authentication,
+                listId: account.listId,
+                createdAt: account.createdAt,
+              ),
+            )
+            .toList(growable: false),
+      );
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'account_list_failed',
+        'the accounts could not be listed',
       );
     }
   }

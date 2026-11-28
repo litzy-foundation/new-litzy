@@ -67,23 +67,32 @@ builds a document. The email address, every host and every credential are
 checked for control characters by the named validation function introduced
 for R52.
 
-Credentials come from one of two front-end flows. When an authenticated
-configuration document advertises OAuth 2.0, the application opens the system
-browser with PKCE and stores the resulting token in the operating system
-keychain through the existing vault port. Otherwise a secure credential form
-collects the password with obscured entry and sends it straight to the vault.
-There is no command-line flag, environment variable, versioned file, fixture
-or log line that can carry a password. The CLI keeps the Mode B command
-unavailable until a platform `SecretStore` adapter provides a non-echoing
-terminal prompt, as already recorded in ADR-0015.
+Credentials come from a secure front-end flow. A GUI form collects the password
+with obscured entry, and the CLI reads it from a terminal with echo disabled;
+when standard input is a pipe no echo can occur, so the prompt reads the pipe
+without changing terminal modes. The CLI writes its prompt to standard error so
+standard output stays machine-readable. Both front-ends place the value in a
+`CredentialVault` backed by a platform `SecretStore`, send it to the engine as
+an in-memory typed value and keep it in the operating system keychain. The
+secret is written after discovery and removed if login verification fails, so
+a rejected account leaves no stored credential. There is no command-line flag,
+environment variable, versioned file, fixture or log line that can carry a
+password. ADR-0015's waiting CLI command is thereby satisfied on Linux through
+libsecret and on every target with a Flutter plugin adapter in the GUI.
+
+OAuth remains a separate slice under R55. A standards-based OAuth client needs
+a registered client identifier, and deriving one per provider would create the
+provider table that R10 forbids. The vault keeps its OAuth port, but this slice
+does not claim to connect a provider that accepts only OAuth; P24 records that
+limitation.
 
 Failures are deterministic typed codes such as `invalid_email`,
 `discovery_failed`, `untrusted_endpoint`, `insecure_transport`,
 `unsupported_auth` and `keychain_unavailable`, and the front-ends select
-localized messages by code. When discovery cannot establish a trustworthy
-endpoint, the user may enter a host and port manually; those values are
-non-secret settings stored in SQLite, and the TLS and validation rules still
-apply.
+localized messages by code. The design leaves room for manual entry of a host
+and port when discovery cannot establish a trustworthy endpoint, but that
+surface is not part of this slice. When it lands, those values will be
+non-secret settings stored in SQLite under the same TLS and validation rules.
 
 ## Consequences
 
@@ -97,13 +106,15 @@ Every discovered endpoint records its trust source so the interface can
 distinguish a verified document from a derived guess.
 
 Discovery can still fail for a provider that publishes none of the standard
-records. That case produces a typed error and the manual endpoint entry rather
-than a silent guess. OAuth is used only when the authenticated configuration
-advertises it, so other providers use the secure password form without a
-provider branch. The new HTTPS and DNS ports live in the engine and are faked
-in tests, so no test needs a real provider or a real secret. Neither front-end
-can yet hold a credential for repeated use because no platform secret adapter
-exists; a GUI form may pass a secret through the in-memory bus for one login
-verification, but it cannot claim that the account is ready for later syncs.
-S15 records that boundary together with the acceptance evidence required by
-R50.
+records. That case produces a typed error rather than a silent guess, and manual
+endpoint entry remains a later surface. Providers that accept a password need
+no branch, because discovery derives their endpoints and the same secure form
+or prompt supplies the credential. The shipped policy disables loopback
+plaintext fixtures, and only an acceptance harness overrides it with a fixture
+policy through a path environment variable. The HTTPS and DNS ports live in the
+engine and are faked in tests, so no test needs a real provider or a real
+secret. Both compiled clients are exercised against a local profile under R50,
+and the CLI acceptance uses a temporary libsecret attribute set that is removed
+afterwards. A provider that
+accepts only OAuth cannot be connected in this slice, as recorded in P24 and
+S15b, and no provider table is introduced to work around it.

@@ -38,6 +38,22 @@ final class AppMessages {
   static const String _errorUnexpectedFailure = 'error-unexpected-failure';
   static const String _errorUnknown = 'error-unknown';
   static const String _emptyView = 'empty-view';
+  static const String _passwordPrompt = 'password-prompt';
+  static const String _passwordRequired = 'password-required';
+  static const String _accountUnsupportedAuth = 'account-unsupported-auth';
+  static const String _setupTitle = 'setup-title';
+  static const String _setupDescription = 'setup-description';
+  static const String _setupEmailLabel = 'setup-email-label';
+  static const String _setupPasswordLabel = 'setup-password-label';
+  static const String _setupConnectAction = 'setup-connect-action';
+  static const String _setupSkipAction = 'setup-skip-action';
+  static const String _setupDiscovering = 'setup-discovering';
+  static const String _setupConnecting = 'setup-connecting';
+  static const String _setupConnected = 'setup-connected';
+  static const String _setupInvalidAddress = 'setup-invalid-address';
+  static const String _setupError = 'setup-error';
+  static const String _setupEndpoints = 'setup-endpoints';
+  static const String _setupClearAction = 'setup-clear-action';
 
   final FluentCatalog _catalog;
 
@@ -134,4 +150,55 @@ final class AppMessages {
 
   /// Message shown when a cross-channel view has no matching topics.
   String get emptyView => _catalog.message(_emptyView);
+
+  /// Prompt written before a password is read from the terminal.
+  String passwordPrompt(String email) =>
+      _catalog.message(_passwordPrompt, {'email': email});
+
+  /// Diagnostic shown when the user supplies an empty password.
+  String get passwordRequired => _catalog.message(_passwordRequired);
+
+  /// Diagnostic shown when an account does not accept a password.
+  String get accountUnsupportedAuth =>
+      _catalog.message(_accountUnsupportedAuth);
+
+  /// Heading of the account setup surface.
+  String get setupTitle => _catalog.message(_setupTitle);
+
+  /// Explanation of the account setup surface.
+  String get setupDescription => _catalog.message(_setupDescription);
+
+  /// Label of the email address field.
+  String get setupEmailLabel => _catalog.message(_setupEmailLabel);
+
+  /// Label of the obscured password field.
+  String get setupPasswordLabel => _catalog.message(_setupPasswordLabel);
+
+  /// Label of the action that verifies and stores an account.
+  String get setupConnectAction => _catalog.message(_setupConnectAction);
+
+  /// Label of the action that skips account setup.
+  String get setupSkipAction => _catalog.message(_setupSkipAction);
+
+  /// Status shown while endpoints are derived.
+  String get setupDiscovering => _catalog.message(_setupDiscovering);
+
+  /// Status shown while the login is verified.
+  String get setupConnecting => _catalog.message(_setupConnecting);
+
+  /// Status shown after a successful connection.
+  String get setupConnected => _catalog.message(_setupConnected);
+
+  /// Diagnostic shown when the address is not valid.
+  String get setupInvalidAddress => _catalog.message(_setupInvalidAddress);
+
+  /// Diagnostic shown when the setup flow fails.
+  String get setupError => _catalog.message(_setupError);
+
+  /// Non-secret summary of the derived endpoints.
+  String setupEndpoints(String imap, String smtp) =>
+      _catalog.message(_setupEndpoints, {'imap': imap, 'smtp': smtp});
+
+  /// Label of the action that clears the setup form.
+  String get setupClearAction => _catalog.message(_setupClearAction);
 }

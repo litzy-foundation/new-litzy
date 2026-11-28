@@ -2,10 +2,15 @@
 import 'dart:convert';
 
 import 'package:engine/engine.dart';
+import 'package:l10n/l10n.dart';
 import 'package:protocol/protocol.dart';
+import 'package:security/security.dart';
 
+import 'cli_messages.dart';
 import 'command_line.dart';
+import 'password_reader.dart';
 import 'snapshot.dart';
+import 'terminal_password_reader.dart';
 
 /// The process-level result of one CLI invocation.
 final class CliResult {
@@ -26,7 +31,21 @@ final class CliResult {
 ///
 /// Every invocation opens the local profile and closes the isolate, so the
 /// CLI holds no engine state between processes.
-Future<CliResult> runCommand(ParsedCliCommand parsed) async {
+Future<CliResult> runCommand(
+  ParsedCliCommand parsed, {
+  SecretStore? secretStore,
+  PasswordReader? passwordReader,
+  AppMessages? messages,
+}) async {
+  if (parsed.command case ConnectCommand(:final emailAddress)) {
+    return _connectAccount(
+      parsed,
+      emailAddress,
+      secretStore: secretStore,
+      passwordReader: passwordReader,
+      messages: messages,
+    );
+  }
   final List<LmlpRequest> requests;
   try {
     requests = await _requestsOf(parsed);
@@ -35,7 +54,7 @@ Future<CliResult> runCommand(ParsedCliCommand parsed) async {
   }
   final client = await EngineClient.start();
   try {
-    if (parsed.command is! PingCommand) {
+    if (parsed.databasePath != null) {
       final opened = await client.sendRequest(
         OpenProfileRequest(
           'open',
@@ -59,6 +78,96 @@ Future<CliResult> runCommand(ParsedCliCommand parsed) async {
   }
 }
 
+Future<CliResult> _connectAccount(
+  ParsedCliCommand parsed,
+  String emailAddress, {
+  SecretStore? secretStore,
+  PasswordReader? passwordReader,
+  AppMessages? messages,
+}) async {
+  final text = messages ?? CliMessages.read();
+  final reader = passwordReader ?? TerminalPasswordReader();
+  late final CredentialVault vault;
+  try {
+    vault = CredentialVault(
+      store: secretStore ?? LibsecretStore(),
+      providers: const [],
+    );
+  } on SecretStoreException catch (error) {
+    return CliResult(exitCode: 1, error: 'keychain_unavailable: $error');
+  }
+
+  final client = await EngineClient.start();
+  try {
+    final opened = await client.sendRequest(
+      OpenProfileRequest(
+        'open',
+        parsed.databasePath!,
+        blobsDirectory: parsed.blobsDirectory,
+      ),
+    );
+    if (opened case ErrorResponse(:final code, :final message)) {
+      return CliResult(exitCode: 1, error: '$code: $message');
+    }
+    final discovered = await client.sendRequest(
+      DiscoverAccountRequest('discover', emailAddress),
+    );
+    if (discovered case ErrorResponse(:final code, :final message)) {
+      return CliResult(exitCode: 1, error: '$code: $message');
+    }
+    if (discovered is! DiscoverAccountResponse) {
+      return const CliResult(exitCode: 1, error: 'unexpected_response');
+    }
+    final account = discovered.account;
+    if (account.imap.authentication != AccountAuthentication.password ||
+        account.smtp.authentication != AccountAuthentication.password) {
+      return CliResult(exitCode: 1, error: text.accountUnsupportedAuth);
+    }
+
+    final password = await reader.read(text.passwordPrompt(emailAddress));
+    if (password.isEmpty) {
+      return CliResult(exitCode: 1, error: text.passwordRequired);
+    }
+    final server = Uri(
+      scheme: account.imap.security == AccountSecurity.implicitTls
+          ? 'imaps'
+          : 'imap',
+      host: account.imap.host,
+      port: account.imap.port,
+    );
+    try {
+      await vault.storePassword(
+        server: server,
+        username: emailAddress,
+        password: password,
+      );
+    } on CredentialException catch (error) {
+      return CliResult(exitCode: 1, error: '$error');
+    }
+
+    try {
+      final connected = await client.sendRequest(
+        ConnectAccountRequest(
+          'connect',
+          emailAddress: emailAddress,
+          credential: AccountCredential.password(password),
+          imap: account.imap,
+          smtp: account.smtp,
+        ),
+      );
+      if (connected case ErrorResponse()) {
+        await vault.forgetPassword(server: server, username: emailAddress);
+      }
+      return _format(connected);
+    } on Object {
+      await vault.forgetPassword(server: server, username: emailAddress);
+      rethrow;
+    }
+  } finally {
+    await client.close();
+  }
+}
+
 Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
   final id = 'command';
   return switch (parsed.command) {
@@ -66,6 +175,13 @@ Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
     SyncCommand(:final cataloguePath, :final sourceId) => [
       SyncRequest(id, cataloguePath, sourceId),
     ],
+    ConnectCommand() => throw StateError(
+      'a connection needs an interactive flow',
+    ),
+    DiscoverCommand(:final emailAddress) => [
+      DiscoverAccountRequest(id, emailAddress),
+    ],
+    AccountsCommand() => [ListAccountsRequest(id)],
     ChannelsCommand() => [ListChannelsRequest(id)],
     ListCommand(:final channelId) => [ListThreadsRequest(id, channelId)],
     ShowCommand(:final rootId) => [ShowThreadRequest(id, rootId)],
@@ -235,6 +351,26 @@ CliResult _format(LmlpResponse response) => switch (response) {
         'authentication': authentication.name,
       }),
     ),
+  AccountListResponse(:final accounts) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({
+      'accounts': accounts
+          .map(
+            (account) => {
+              'id': account.id,
+              'email': account.email,
+              'imapHost': account.imapHost,
+              'imapPort': account.imapPort,
+              'smtpHost': account.smtpHost,
+              'smtpPort': account.smtpPort,
+              'authentication': account.authentication,
+              'listId': account.listId,
+              'createdAt': account.createdAt,
+            },
+          )
+          .toList(),
+    }),
+  ),
   ErrorResponse(:final code, :final message) => CliResult(
     exitCode: 1,
     error: '$code: $message',

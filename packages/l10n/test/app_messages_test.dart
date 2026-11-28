@@ -43,6 +43,22 @@ void main() {
       messages.errorUnexpectedFailure,
       messages.errorUnknown,
       messages.emptyView,
+      messages.passwordPrompt('user@example.com'),
+      messages.passwordRequired,
+      messages.accountUnsupportedAuth,
+      messages.setupTitle,
+      messages.setupDescription,
+      messages.setupEmailLabel,
+      messages.setupPasswordLabel,
+      messages.setupConnectAction,
+      messages.setupSkipAction,
+      messages.setupDiscovering,
+      messages.setupConnecting,
+      messages.setupConnected,
+      messages.setupInvalidAddress,
+      messages.setupError,
+      messages.setupEndpoints('imap.example.com', 'smtp.example.com'),
+      messages.setupClearAction,
     ];
 
     expect(rendered, everyElement(isNotEmpty));

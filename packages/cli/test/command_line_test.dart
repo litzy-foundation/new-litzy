@@ -228,6 +228,51 @@ void main() {
     );
   });
 
+  test('discover needs only an email address', () {
+    final parsed = parseCommandLine(['discover', 'user@example.com']);
+
+    expect(parsed.databasePath, isNull);
+    expect(
+      (parsed.command as DiscoverCommand).emailAddress,
+      'user@example.com',
+    );
+  });
+
+  test('connect needs an email address and accepts a database', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'connect',
+      'user@example.com',
+    ]);
+
+    expect(parsed.databasePath, 'p.db');
+    expect((parsed.command as ConnectCommand).emailAddress, 'user@example.com');
+  });
+
+  test('the connect command never accepts a password option', () {
+    expect(
+      () => parseCommandLine([
+        '--database',
+        'p.db',
+        'connect',
+        'user@example.com',
+        '--password',
+        'secret',
+      ]),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
+  test('accounts takes no argument', () {
+    final parsed = parseCommandLine(['--database', 'p.db', 'accounts']);
+    expect(parsed.command, isA<AccountsCommand>());
+    expect(
+      () => parseCommandLine(['--database', 'p.db', 'accounts', 'extra']),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
   test('an unknown command is rejected', () {
     expect(
       () => parseCommandLine(['--database', 'p.db', 'delete-everything']),

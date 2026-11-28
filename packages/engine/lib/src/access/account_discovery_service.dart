@@ -47,7 +47,7 @@ final class AccountDiscoveryService {
       final path = source == AccountEndpointSource.autoconfigWellKnown
           ? '/.well-known/autoconfig/mail/config-v1.1.xml'
           : '/mail/config-v1.1.xml';
-      final uri = Uri.https(host, path, {'emailaddress': address});
+      final uri = _documentUri(host, path, {'emailaddress': address});
       try {
         final document = await _read(uri, host);
         return _parseAutoconfig(document.body, address, source);
@@ -63,7 +63,7 @@ final class AccountDiscoveryService {
     }
 
     final autodiscoverHost = 'autodiscover.$domain';
-    final autodiscoverUri = Uri.https(
+    final autodiscoverUri = _documentUri(
       autodiscoverHost,
       '/autodiscover/autodiscover.xml',
       {'Email': address},
@@ -92,7 +92,9 @@ final class AccountDiscoveryService {
       );
     }
     final finalUri = document.finalUri;
-    if (finalUri.scheme != 'https') {
+    if (finalUri.scheme != 'https' &&
+        !(policy.allowLoopbackPlaintextFixtures &&
+            _isLoopback(finalUri.host))) {
       throw const DiscoveryException(
         'insecure_transport',
         'the document was served over a plaintext transport',
@@ -366,6 +368,22 @@ final class AccountDiscoveryService {
 
   int _childPort(XmlElement element, String name) =>
       int.tryParse(_childText(element, name)) ?? 0;
+
+  Uri _documentUri(String host, String path, Map<String, String> query) {
+    if (policy.allowLoopbackPlaintextFixtures &&
+        policy.loopbackFixtureHttpPort > 0 &&
+        _isLoopback(host)) {
+      return Uri.http('$host:${policy.loopbackFixtureHttpPort}', path, query);
+    }
+    return Uri.https(host, path, query);
+  }
+
+  bool _isLoopback(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'localhost' ||
+        normalized == '127.0.0.1' ||
+        normalized == '::1';
+  }
 
   bool _aborts(DiscoveryException error) => switch (error.code) {
     'insecure_transport' ||

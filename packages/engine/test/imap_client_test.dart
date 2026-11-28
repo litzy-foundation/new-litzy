@@ -130,6 +130,36 @@ void main() {
     expect(fixture.actions, isNot(contains('SELECT "INBOX"')));
   });
 
+  test('a wrong password is rejected without being recorded', () async {
+    final fixture = ImapFixture(
+      messages: const [FixtureMessage('1', _listMessage)],
+      expectedPassword: 'correct password',
+    );
+    await fixture.start();
+    addTearDown(fixture.close);
+    final client = ImapClient(
+      host: '127.0.0.1',
+      port: fixture.port,
+      username: 'user@example.invalid',
+      password: 'wrong password',
+      security: ImapTransportSecurity.loopbackPlain,
+    );
+
+    await expectLater(
+      client.connect(),
+      throwsA(
+        isA<ImapException>().having(
+          (error) => error.code,
+          'code',
+          'authentication_failed',
+        ),
+      ),
+    );
+    expect(fixture.rejectedLogins, 1);
+    expect(fixture.actions, contains('LOGIN'));
+    expect(fixture.actions.join(' '), isNot(contains('wrong password')));
+  });
+
   test('mailbox actions use RFC commands and respect capabilities', () async {
     final fixture = ImapFixture(
       messages: const [FixtureMessage('7', _listMessage)],

@@ -17,6 +17,8 @@ dns_timeout_ms: 3000
 allowed_imap_ports: [143, 993]
 allowed_smtp_ports: [465, 587]
 allow_loopback_plaintext_fixtures: true
+default_list_id: git
+loopback_fixture_http_port: 0
 ''';
 
 String autoconfig({

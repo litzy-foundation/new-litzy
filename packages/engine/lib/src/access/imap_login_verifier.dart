@@ -15,10 +15,16 @@ import 'setup_exception.dart';
 /// Verifies a login with the shared IMAP client.
 final class ImapLoginVerifier implements AccountLoginVerifier {
   /// Creates a verifier with an optional command deadline.
-  const ImapLoginVerifier({this.timeout = const Duration(seconds: 10)});
+  const ImapLoginVerifier({
+    this.timeout = const Duration(seconds: 10),
+    this.allowLoopbackPlaintextFixtures = false,
+  });
 
   /// Deadline applied to the verification connection.
   final Duration timeout;
+
+  /// Whether a loopback fixture may answer without TLS.
+  final bool allowLoopbackPlaintextFixtures;
 
   @override
   Future<void> verify({
@@ -26,7 +32,9 @@ final class ImapLoginVerifier implements AccountLoginVerifier {
     required String username,
     required AccountCredential credential,
   }) async {
-    if (endpoint.security != AccountSecurity.implicitTls) {
+    final loopbackFixture =
+        allowLoopbackPlaintextFixtures && _isLoopback(endpoint.host);
+    if (endpoint.security != AccountSecurity.implicitTls && !loopbackFixture) {
       throw const SetupException(
         'unsupported_transport',
         'STARTTLS verification is not available in this slice',
@@ -45,6 +53,9 @@ final class ImapLoginVerifier implements AccountLoginVerifier {
       username: username,
       password: credential.reveal,
       timeout: timeout,
+      security: loopbackFixture
+          ? ImapTransportSecurity.loopbackPlain
+          : ImapTransportSecurity.tls,
     );
     try {
       await client.connect();
@@ -53,5 +64,12 @@ final class ImapLoginVerifier implements AccountLoginVerifier {
     } finally {
       await client.close();
     }
+  }
+
+  bool _isLoopback(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'localhost' ||
+        normalized == '127.0.0.1' ||
+        normalized == '::1';
   }
 }

@@ -26,6 +26,12 @@ final class AcceptanceReporter {
     stdout.writeln('${AppRequestKeys.topics}=${state.threads.length}');
   }
 
+  /// Reports that the client opened account setup instead of the reader.
+  void reportSetupRequired() {
+    if (!enabled) return;
+    stdout.writeln(AppRequestKeys.setupRequired);
+  }
+
   /// Reports a startup exception when acceptance output is enabled.
   void reportFailure(Object error) {
     if (!enabled) return;

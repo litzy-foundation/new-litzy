@@ -27,6 +27,7 @@ final class ImapFixture {
     required this.messages,
     this.rejectLogin = false,
     this.omitFetchUid = false,
+    this.expectedPassword,
     this.capabilities = const ['IMAP4REV1', 'UIDPLUS', 'MOVE'],
   });
 
@@ -39,13 +40,22 @@ final class ImapFixture {
   /// Whether FETCH responses omit the unique identifier.
   final bool omitFetchUid;
 
+  /// Password accepted by LOGIN when login correctness is under test.
+  final String? expectedPassword;
+
   /// Capabilities advertised in the greeting.
   final List<String> capabilities;
 
   ServerSocket? _server;
 
   /// Commands received from the client, in order.
+  ///
+  /// When [expectedPassword] is set, LOGIN is recorded by name so the secret
+  /// never appears in the recorded commands.
   final List<String> actions = <String>[];
+
+  /// Number of login attempts rejected by [expectedPassword].
+  int rejectedLogins = 0;
 
   /// Starts listening on a loopback port.
   Future<void> start() async {
@@ -77,14 +87,22 @@ final class ImapFixture {
         final parts = line.split(' ');
         final tag = parts.first;
         final command = parts.skip(1).join(' ').toUpperCase();
-        actions.add(command);
+        actions.add(
+          expectedPassword != null && command.startsWith('LOGIN')
+              ? 'LOGIN'
+              : command,
+        );
         if (command.startsWith('CAPABILITY')) {
           socket.write(
             '* CAPABILITY ${capabilities.join(' ')}${TextTokens.protocolLineEnding}',
           );
           socket.write('$tag OK done${TextTokens.protocolLineEnding}');
         } else if (command.startsWith('LOGIN')) {
-          if (rejectLogin) {
+          final expected = expectedPassword;
+          final passwordMatches =
+              expected == null || line.contains('"$expected"');
+          if (rejectLogin || !passwordMatches) {
+            if (!passwordMatches) rejectedLogins++;
             socket.write(
               '$tag NO authentication failed${TextTokens.protocolLineEnding}',
             );

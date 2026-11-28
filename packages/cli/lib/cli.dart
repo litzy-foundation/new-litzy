@@ -8,4 +8,8 @@ library;
 
 export 'src/command_line.dart';
 export 'src/command_runner.dart';
+export 'src/password_input.dart';
+export 'src/password_reader.dart';
+export 'src/process_password_input.dart';
 export 'src/snapshot.dart';
+export 'src/terminal_password_reader.dart';

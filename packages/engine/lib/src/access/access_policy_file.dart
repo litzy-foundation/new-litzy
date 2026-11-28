@@ -8,6 +8,7 @@ library;
 import 'dart:io';
 
 import 'access_policy.dart';
+import 'access_policy_environment_keys.dart';
 
 /// Reads the versioned access policy from `data/access`.
 final class AccessPolicyFile {
@@ -23,10 +24,14 @@ final class AccessPolicyFile {
   }
 
   static File _locate() {
+    final override =
+        Platform.environment[AccessPolicyEnvironmentKeys.policyPath];
+    if (override != null && override.isNotEmpty) return File(override);
     final candidates = <File>[
       File.fromUri(Platform.script.resolve(relativeLocation)),
       File.fromUri(Platform.script.resolve('../$relativeLocation')),
       File.fromUri(Platform.script.resolve('../../$relativeLocation')),
+      File.fromUri(Platform.script.resolve('../../../$relativeLocation')),
       File(relativeLocation),
       File('../$relativeLocation'),
       File('../../$relativeLocation'),
