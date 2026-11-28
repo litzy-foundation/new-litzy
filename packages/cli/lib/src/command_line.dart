@@ -55,6 +55,21 @@ final class ThreadCommand extends CliCommand {
   final String rootId;
 }
 
+/// Changes one or two triage flags on a persisted message.
+final class TriageCommand extends CliCommand {
+  /// Creates a triage command with optional new values for both flags.
+  const TriageCommand(this.messageId, {this.read, this.starred});
+
+  /// Identifier of the message to change or inspect.
+  final String messageId;
+
+  /// New read value, or null when the flag is unchanged.
+  final bool? read;
+
+  /// New starred value, or null when the flag is unchanged.
+  final bool? starred;
+}
+
 /// Audits a snapshot of inbox messages without changing a mailbox.
 final class AuditCommand extends CliCommand {
   /// Creates an audit command reading [snapshotPath].
@@ -87,24 +102,35 @@ final class ParsedCliCommand {
   final CliCommand command;
 }
 
+const Set<String> _booleanOptions = {'read', 'unread', 'star', 'unstar'};
+
 /// Parses command-line arguments without touching the engine.
 ParsedCliCommand parseCommandLine(List<String> arguments) {
   final options = <String, String>{};
+  final flags = <String>{};
   final positional = <String>[];
   for (var index = 0; index < arguments.length; index++) {
     final token = arguments[index];
     if (token.startsWith('--')) {
+      final name = token.substring(2);
+      if (_booleanOptions.contains(name)) {
+        flags.add(name);
+        continue;
+      }
       if (index + 1 >= arguments.length ||
           arguments[index + 1].startsWith('--')) {
         throw CliUsageException('$token needs a value');
       }
-      options[token.substring(2)] = arguments[++index];
+      options[name] = arguments[++index];
     } else {
       positional.add(token);
     }
   }
   if (positional.isEmpty) throw const CliUsageException('no command given');
   final name = positional.removeAt(0);
+  if (flags.isNotEmpty && name != 'triage') {
+    throw const CliUsageException('triage flags belong to the triage command');
+  }
   final database = options['database'];
   if (name != 'ping' && (database == null || database.isEmpty)) {
     throw const CliUsageException('--database is required for data commands');
@@ -164,6 +190,37 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
         blobsDirectory: blobs,
         blobBackend: backend,
         command: ThreadCommand(argument),
+      );
+    case 'triage':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('triage needs a message identifier');
+      }
+      if (flags.contains('read') && flags.contains('unread')) {
+        throw const CliUsageException('read and unread conflict');
+      }
+      if (flags.contains('star') && flags.contains('unstar')) {
+        throw const CliUsageException('star and unstar conflict');
+      }
+      if (flags.isEmpty) {
+        throw const CliUsageException('triage needs at least one flag');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        blobBackend: backend,
+        command: TriageCommand(
+          argument,
+          read: flags.contains('read')
+              ? true
+              : flags.contains('unread')
+              ? false
+              : null,
+          starred: flags.contains('star')
+              ? true
+              : flags.contains('unstar')
+              ? false
+              : null,
+        ),
       );
     case 'audit':
       final snapshot = options['snapshot'];

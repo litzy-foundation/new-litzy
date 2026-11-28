@@ -27,9 +27,9 @@ final class CliResult {
 /// Every invocation opens the local profile and closes the isolate, so the
 /// CLI holds no engine state between processes.
 Future<CliResult> runCommand(ParsedCliCommand parsed) async {
-  final LmlpRequest request;
+  final List<LmlpRequest> requests;
   try {
-    request = await _requestOf(parsed);
+    requests = await _requestsOf(parsed);
   } on SnapshotException catch (error) {
     return CliResult(exitCode: 1, error: '$error');
   }
@@ -48,27 +48,36 @@ Future<CliResult> runCommand(ParsedCliCommand parsed) async {
         return CliResult(exitCode: 1, error: '$code: $message');
       }
     }
-    return _format(await client.sendRequest(request));
+    LmlpResponse? last;
+    for (final request in requests) {
+      final response = await client.sendRequest(request);
+      if (response is ErrorResponse) return _format(response);
+      last = response;
+    }
+    return _format(last!);
   } finally {
     await client.close();
   }
 }
 
-Future<LmlpRequest> _requestOf(ParsedCliCommand parsed) async {
+Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
   final id = 'command';
   return switch (parsed.command) {
-    PingCommand() => PingRequest(id),
-    SyncCommand(:final cataloguePath, :final sourceId) => SyncRequest(
-      id,
-      cataloguePath,
-      sourceId,
-    ),
-    SearchCommand(:final terms) => SearchRequest(id, terms),
-    ThreadCommand(:final rootId) => ThreadRequest(id, rootId),
-    AuditCommand(:final snapshotPath) => AuditRequest(
-      id,
-      readInboxSnapshot(snapshotPath),
-    ),
+    PingCommand() => [PingRequest(id)],
+    SyncCommand(:final cataloguePath, :final sourceId) => [
+      SyncRequest(id, cataloguePath, sourceId),
+    ],
+    SearchCommand(:final terms) => [SearchRequest(id, terms)],
+    ThreadCommand(:final rootId) => [ThreadRequest(id, rootId)],
+    TriageCommand(:final messageId, :final read, :final starred) => [
+      if (read != null) SetTriageRequest(id, messageId, TriageState.read, read),
+      if (starred != null)
+        SetTriageRequest(id, messageId, TriageState.starred, starred),
+      GetTriageRequest(id, messageId),
+    ],
+    AuditCommand(:final snapshotPath) => [
+      AuditRequest(id, readInboxSnapshot(snapshotPath)),
+    ],
   };
 }
 
@@ -100,6 +109,10 @@ CliResult _format(LmlpResponse response) => switch (response) {
           )
           .toList(),
     }),
+  ),
+  TriageResponse(:final messageId, :final read, :final starred) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({'id': messageId, 'read': read, 'starred': starred}),
   ),
   AuditResponse(:final residual, :final unmanaged, :final quarantined) =>
     CliResult(

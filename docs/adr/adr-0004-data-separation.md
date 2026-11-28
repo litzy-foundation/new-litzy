@@ -22,6 +22,13 @@ in R37. No `.env` file is part of the supported configuration flow and no
 credential is versioned. A missing required field in a data file is an
 explicit startup error.
 
+Triage state consists of two booleans per message: whether the message has
+been read and whether the user starred it. Both live in the `messages` table
+so an existing profile gains them through a migration. The engine exposes
+one verb to change a flag and one to read both back, and the front-ends never
+write SQLite directly. Draft replies also live in SQLite because they are
+mutable runtime state, not declarative configuration.
+
 ## Consequences
 
 Catalogue changes are reviewable in pull requests without touching code.

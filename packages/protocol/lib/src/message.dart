@@ -102,6 +102,15 @@ enum BlobBackend {
   sqlite,
 }
 
+/// One mutable flag in the local triage state.
+enum TriageState {
+  /// Whether the message has been read.
+  read,
+
+  /// Whether the user starred the message.
+  starred,
+}
+
 /// Opens the local profile before any data operation.
 final class OpenProfileRequest extends LmlpRequest {
   /// Creates a request for the database at [databasePath].
@@ -165,6 +174,30 @@ final class ThreadRequest extends LmlpRequest {
 
   /// Identifier of the thread root.
   final String rootId;
+}
+
+/// Changes one triage flag on one persisted message.
+final class SetTriageRequest extends LmlpRequest {
+  /// Creates a request that sets [state] to [enabled] for [messageId].
+  const SetTriageRequest(super.id, this.messageId, this.state, this.enabled);
+
+  /// Identifier of the message to change.
+  final String messageId;
+
+  /// Flag to change.
+  final TriageState state;
+
+  /// New value of the flag.
+  final bool enabled;
+}
+
+/// Reads the triage flags of one persisted message.
+final class GetTriageRequest extends LmlpRequest {
+  /// Creates a request for the flags of [messageId].
+  const GetTriageRequest(super.id, this.messageId);
+
+  /// Identifier of the message to inspect.
+  final String messageId;
 }
 
 /// Asks the engine to audit a read-only snapshot of inbox messages.
@@ -246,6 +279,21 @@ final class ThreadResponse extends LmlpResponse {
 
   /// Messages in pre-order.
   final List<MessageData> messages;
+}
+
+/// Reports both triage flags of one persisted message.
+final class TriageResponse extends LmlpResponse {
+  /// Creates a response for [messageId] with both flags.
+  const TriageResponse(super.id, this.messageId, this.read, this.starred);
+
+  /// Identifier of the inspected message.
+  final String messageId;
+
+  /// Whether the message has been read.
+  final bool read;
+
+  /// Whether the message is starred.
+  final bool starred;
 }
 
 /// Reports the engine's read-only verdict on an inbox snapshot.

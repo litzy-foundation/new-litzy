@@ -98,11 +98,16 @@ final class LocalDatabase {
         endpoint TEXT NOT NULL
       )
     ''');
-    final columns = _database.select('PRAGMA table_info(messages)');
-    if (!columns.any((column) => column['name'] == 'quarantined')) {
-      _database.execute(
-        'ALTER TABLE messages ADD COLUMN quarantined INTEGER NOT NULL DEFAULT 0',
-      );
+    final columns = _database
+        .select('PRAGMA table_info(messages)')
+        .map((row) => row['name'] as String)
+        .toSet();
+    for (final column in const ['quarantined', 'is_read', 'starred']) {
+      if (!columns.contains(column)) {
+        _database.execute(
+          'ALTER TABLE messages ADD COLUMN $column INTEGER NOT NULL DEFAULT 0',
+        );
+      }
     }
   }
 
@@ -195,6 +200,40 @@ final class LocalDatabase {
     );
     if (rows.isEmpty) return null;
     return rows.first['checksum'] as String;
+  }
+
+  /// Changes the supplied triage flags of an existing message.
+  void setTriage(String id, {bool? read, bool? starred}) {
+    final assignments = <String>[];
+    final values = <Object?>[];
+    if (read != null) {
+      assignments.add('is_read = ?');
+      values.add(read ? 1 : 0);
+    }
+    if (starred != null) {
+      assignments.add('starred = ?');
+      values.add(starred ? 1 : 0);
+    }
+    if (assignments.isEmpty) return;
+    values.add(id);
+    _database.execute(
+      'UPDATE messages SET ${assignments.join(', ')} WHERE id = ?',
+      values,
+    );
+  }
+
+  /// Returns both triage flags of [id], or null when the message is absent.
+  ({bool read, bool starred})? triageOf(String id) {
+    final rows = _database.select(
+      'SELECT is_read, starred FROM messages WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return (
+      read: (row['is_read'] as int) == 1,
+      starred: (row['starred'] as int) == 1,
+    );
   }
 
   /// Stores a compressed blob once, keyed by its uncompressed digest.
