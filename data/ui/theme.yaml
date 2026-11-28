@@ -1,7 +1,19 @@
 # Copyright (c) 2026 Alessio Attilio and the litzy contributors
-# Theme tokens used by the read-only Litzy client.
+# Quiet Workshop style tokens used by every Litzy client target.
 
 version: 1
+style_name: Quiet Workshop
 monospace_font: monospace
+surface_color: "#FFFFFFFF"
+surface_alt_color: "#FFF5F6F7"
+text_color: "#FF1A1C1E"
+muted_text_color: "#FF5C636A"
+accent_color: "#FF2E7D32"
+border_color: "#FFD6DBE0"
 diff_color: "#FF1B5E20"
 quote_color: "#FF607D8B"
+spacing_unit: 8.0
+card_radius: 8.0
+body_text_scale: 1.0
+focus_width: 2.0
+reduced_motion_ms: 0

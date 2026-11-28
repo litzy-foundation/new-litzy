@@ -510,6 +510,53 @@ schema, queries, pragmas and reusable fragments alike. ADR-0024 records the
 loading boundary, S14 tracks the audit and any extraction, and P15 remains
 open until the audit has evidence of closure.
 
+## R52 — Control characters use named representations
+
+The maintainer restated: "ho detto che monnezza come \n \t \r e similari non ne
+voglio , definisci o usa una function per fare il corrispettivo". Newline, tab,
+carriage return, null and similar control characters are never written as raw
+escapes in Dart source. The existing `TextTokens` class in `packages/core` is
+the named representation: algorithms join, split and compare through its
+members. A function validates untrusted text for any control character, so a
+caller does not build its own regular expression from raw escapes. This closes
+Q8 by giving the literal question in R47 a tested answer, without weakening
+any other part of R47. P23 tracks the migration of remaining source and test
+fixtures, and the roadmap records the boundary enforcement.
+
+## R53 — Automatic mail access for every provider
+
+The maintainer stated: "assicurati di non fare minchiate nel passaggio critico :
+l'accesso ; ricordo che devo poter accedere con tutti i provider mail ; io metto
+l'email e l'app configura automaticamente tutto" and "no credenziali in chiaro,
+no problemi di ogni tipo , no vulnerabilità eligibili". A user enters only an
+email address, and the application derives the mail endpoints automatically for
+any RFC-compliant provider. Discovery uses open standards in a fixed order of
+trust and never a table of provider exceptions. Transport is TLS by default,
+and no remote connection may downgrade to plaintext. Credentials arrive only
+through OAuth managed by the application or a secure credential form, and they
+live in the operating system keychain as required by R35 and R37. No password
+or token is written to a versioned file, a fixture, a log or a plain argument.
+The design prevents avoidable vulnerabilities such as server-side request
+forgery, redirect abuse, XML entity expansion, oversized responses and
+control-character injection. ADR-0025 records the trust model, S15 tracks the
+slice and P21 stays in the problem register until access is implemented and
+verified.
+
+## R54 — Defined app style and real-app baseline
+
+The maintainer stated: "definsci lo stile stesso dell'app definisci il
+necessario per renderla un app vera e propria" and "non saprei, vedi tu il modo
+migliore". The application has one declared visual style, expressed as
+declarative tokens under `data/ui` and referenced by key, not as literal
+colours or sizes in widgets. The style is adaptive on Linux, macOS, Windows,
+Android and iOS, accessible and fully localized. The project also defines the
+baseline that makes Litzy a real application rather than a collection of
+demos: identity, account setup, settings, onboarding and empty states, sync
+status, deterministic error and offline behaviour, search and triage, a
+secure credential lifecycle, local data lifecycle and no telemetry. ADR-0026
+records the choice, S16 tracks the work and P22 stays in the problem register
+until the baseline is implemented and verified.
+
 ## Open questions
 
 | # | Question | Status |
@@ -521,7 +568,7 @@ open until the audit has evidence of closure.
 | Q5 | Should the GUI and CLI share the engine in-process or over local IPC? | Closed by R32 and refined by R40: one local Dart isolate, no wire protocol |
 | Q6 | Can the former inbound SMTP listener return as a plugin? | Closed by R41: permanently removed until a new maintainer decision |
 | Q7 | Should cloud archiving ever be enabled, and who would operate it? | Parked by R20 |
-| Q8 | Which literals must be moved out of source besides user-visible text, especially protocol delimiters and control characters? | Open, needs an explicit choice under R47 |
+| Q8 | Which literals must be moved out of source besides user-visible text, especially protocol delimiters and control characters? | Closed by R52: named representations and a validation function replace raw control escapes, and P23 tracks the remaining migration |
 | Q9 | Should the Flutter GUI package be created now, or should the first credential-free slice prove the CLI against real Git list data? | Closed by the maintainer's explicit request for both: CLI first in S10, GUI next in S11, as recorded in R45 |
 | Q10 | Which formats and triggers do import, export, autoimport and autoexport use in the first slice? | Closed by R48: mbox and Maildir import, mbox export, YAML rules triggered after sync |
 | Q11 | Where are the public description and discoverability tags published? | Closed by R49: versioned YAML, README and GitHub repository metadata in S13 |
@@ -529,6 +576,6 @@ open until the audit has evidence of closure.
 | Q13 | Should the thread builder and quote or diff analyzer be restored from the preserved backup or reimplemented against the current engine contract? | Closed: restore and adapt the preserved algorithms in S11, because their tests cover hostile reference chains and real patch bodies |
 
 Decisions recorded in this cycle close the questions about front-end order,
-transfer formats, publication place, algorithm provenance and SQLite
-contention. Q8 stays open because its answer requires a tested code slice
-rather than a naming choice.
+transfer formats, publication place, algorithm provenance, SQLite contention
+and control-character literals. No open question remains about the literal
+convention, but P23 tracks the migration work that the decision implies.

@@ -56,3 +56,15 @@ CREATE TABLE IF NOT EXISTS channels (
   protocol TEXT NOT NULL,
   endpoint TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS accounts (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  imap_host TEXT NOT NULL,
+  imap_port INTEGER NOT NULL,
+  smtp_host TEXT NOT NULL,
+  smtp_port INTEGER NOT NULL,
+  authentication TEXT NOT NULL,
+  list_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

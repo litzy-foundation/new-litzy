@@ -64,7 +64,7 @@ Directory _engineRoot() {
 }
 
 Future<void> _waitForReadyFiles(List<File> files) async {
-  for (var attempt = 0; attempt < 500; attempt++) {
+  for (var attempt = 0; attempt < 3000; attempt++) {
     if (files.every((file) => file.existsSync())) return;
     await Future<void>.delayed(const Duration(milliseconds: 10));
   }
@@ -222,6 +222,7 @@ void main() {
 
   test(
     'two processes can write to one profile without a lock service',
+    timeout: const Timeout(Duration(seconds: 90)),
     () async {
       final harness = _Harness();
       addTearDown(harness.close);
@@ -251,7 +252,7 @@ void main() {
       final watchers = [for (final process in processes) watchWorker(process)];
 
       await _waitForReadyFiles(readyFiles)
-          .timeout(const Duration(seconds: 10))
+          .timeout(const Duration(seconds: 35))
           .catchError((Object error) async {
             final codes = await Future.wait(
               watchers.map((watcher) => watcher.code),

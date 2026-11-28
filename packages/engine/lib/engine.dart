@@ -5,6 +5,18 @@
 /// requires every exchange with it to use typed LMLP messages.
 library;
 
+export 'src/access/access_policy.dart';
+export 'src/access/access_policy_file.dart';
+export 'src/access/account_discovery_service.dart';
+export 'src/access/account_login_verifier.dart';
+export 'src/access/account_setup_service.dart';
+export 'src/access/discovery_exception.dart';
+export 'src/access/discovery_http_client.dart';
+export 'src/access/dns_srv_resolver.dart';
+export 'src/access/http_discovery_client.dart';
+export 'src/access/imap_login_verifier.dart';
+export 'src/access/setup_exception.dart';
+export 'src/access/udp_dns_srv_resolver.dart';
 export 'src/engine_client.dart';
 export 'src/engine_isolate.dart';
 export 'src/ingestion/audit_service.dart';
@@ -24,6 +36,7 @@ export 'src/ingestion/mode_c_sync_service.dart';
 export 'src/ingestion/nntp_client.dart';
 export 'src/ingestion/public_inbox_client.dart';
 export 'src/ingestion/purge_coordinator.dart';
+export 'src/storage/account_record.dart';
 export 'src/storage/blob_store.dart';
 export 'src/storage/channel_record.dart';
 export 'src/storage/legacy_blob_migrator.dart';

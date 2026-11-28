@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:engine/engine.dart';
 import 'package:protocol/protocol.dart';
 import 'package:test/test.dart';
@@ -24,7 +25,7 @@ final class _Harness {
         dateEpoch: 1000,
         parentId: null,
         threadRootId: 'm1@example.invalid',
-        body: 'first body line\nsecond body line',
+        body: 'first body line${TextTokens.lineFeed}second body line',
         checksum: checksumOfBytes('body'.codeUnits),
       ),
     ]);

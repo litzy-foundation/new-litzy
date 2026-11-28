@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:engine/engine.dart';
 import 'package:protocol/protocol.dart';
 import 'package:test/test.dart';
@@ -71,7 +72,9 @@ From: Author <author@example.invalid>
 
   test('an mbox message without a header block is rejected', () {
     expect(
-      () => LocalMailParser.parseMbox('From author@example.invalid\nbody\n'),
+      () => LocalMailParser.parseMbox(
+        'From author@example.invalid${TextTokens.lineFeed}body${TextTokens.lineFeed}',
+      ),
       throwsA(
         isA<ImportException>().having(
           (error) => error.code,
@@ -208,9 +211,10 @@ From: Author <author@example.invalid>
   test('malformed mail is rejected before anything is persisted', () async {
     final directory = Directory.systemTemp.createTempSync('litzy-import-bad');
     addTearDown(() => directory.deleteSync(recursive: true));
-    final source = File(
-      '${directory.path}${Platform.pathSeparator}bad.mbox',
-    )..writeAsStringSync('From author@example.invalid\nbody without headers\n');
+    final source = File('${directory.path}${Platform.pathSeparator}bad.mbox')
+      ..writeAsStringSync(
+        'From author@example.invalid${TextTokens.lineFeed}body without headers${TextTokens.lineFeed}',
+      );
     final client = await _openProfile(
       '${directory.path}${Platform.pathSeparator}profile.db',
     );

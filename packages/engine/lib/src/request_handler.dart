@@ -3,6 +3,18 @@ import 'dart:io';
 
 import 'package:protocol/protocol.dart';
 
+import 'access/access_policy.dart';
+import 'access/access_policy_file.dart';
+import 'access/account_discovery_service.dart';
+import 'access/account_login_verifier.dart';
+import 'access/account_setup_service.dart';
+import 'access/discovery_exception.dart';
+import 'access/discovery_http_client.dart';
+import 'access/dns_srv_resolver.dart';
+import 'access/http_discovery_client.dart';
+import 'access/imap_login_verifier.dart';
+import 'access/setup_exception.dart';
+import 'access/udp_dns_srv_resolver.dart';
 import 'ingestion/audit_service.dart';
 import 'ingestion/draft_service.dart';
 import 'ingestion/local_import_service.dart';
@@ -20,6 +32,21 @@ import 'storage/message_record.dart';
 /// The handler is exhaustive over the sealed request union, so a new verb
 /// must be answered here before it can cross the isolate boundary.
 final class EngineRequestHandler {
+  /// Creates a handler over the default access ports, or injected fakes.
+  EngineRequestHandler({
+    AccessPolicy? accessPolicy,
+    DiscoveryHttpClient? discoveryHttp,
+    DnsSrvResolver? dns,
+    AccountLoginVerifier? loginVerifier,
+  }) : _policy = accessPolicy,
+       _httpClient = discoveryHttp,
+       _dnsResolver = dns,
+       _loginCheck = loginVerifier;
+
+  final AccessPolicy? _policy;
+  final DiscoveryHttpClient? _httpClient;
+  final DnsSrvResolver? _dnsResolver;
+  final AccountLoginVerifier? _loginCheck;
   LocalDatabase? _database;
   BlobStore? _blobs;
 
@@ -37,6 +64,10 @@ final class EngineRequestHandler {
         return _sync(request);
       case ImapSyncRequest():
         return _syncImap(request);
+      case DiscoverAccountRequest():
+        return _discover(request);
+      case ConnectAccountRequest():
+        return _connect(request);
       case IngestRequest():
         return _ingest(request);
       case SearchRequest():
@@ -134,6 +165,55 @@ final class EngineRequestHandler {
         request.id,
         'imap_sync_failed',
         'the mailbox could not be synchronised',
+      );
+    }
+  }
+
+  Future<LmlpResponse> _discover(DiscoverAccountRequest request) async {
+    try {
+      final service = AccountDiscoveryService(
+        policy: _policy ?? AccessPolicyFile.read(),
+        http:
+            _httpClient ??
+            const HttpDiscoveryClient(allowLoopbackPlaintextFixtures: true),
+        dns: _dnsResolver ?? const UdpDnsSrvResolver(),
+      );
+      final account = await service.discover(request.emailAddress);
+      return DiscoverAccountResponse(request.id, account);
+    } on DiscoveryException catch (error) {
+      return ErrorResponse(request.id, error.code, error.message);
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'discovery_failed',
+        'the mail endpoints could not be derived',
+      );
+    }
+  }
+
+  Future<LmlpResponse> _connect(ConnectAccountRequest request) async {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      final service = AccountSetupService(
+        database: database,
+        verifier: _loginCheck ?? const ImapLoginVerifier(),
+        policy: _policy ?? AccessPolicyFile.read(),
+      );
+      final record = await service.connect(request);
+      return ConnectAccountResponse(
+        request.id,
+        record.id,
+        record.email,
+        request.credential.kind,
+      );
+    } on SetupException catch (error) {
+      return ErrorResponse(request.id, error.code, error.message);
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'connect_failed',
+        'the account could not be connected',
       );
     }
   }

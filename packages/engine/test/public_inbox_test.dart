@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:test/test.dart';
 import 'package:engine/engine.dart';
 
@@ -80,7 +81,10 @@ void main() {
 
     expect(messages, hasLength(2));
     expect(messages.first.headers['message-id'], '<m1@example.invalid>');
-    expect(messages.first.body, 'first body line\nsecond body line');
+    expect(
+      messages.first.body,
+      'first body line${TextTokens.lineFeed}second body line',
+    );
     expect(messages.last.headers['in-reply-to'], '<m1@example.invalid>');
     expect(messages.last.body, 'reply body');
     final expectedRaw = <String>[
@@ -90,7 +94,7 @@ void main() {
       '',
       'first body line',
       'second body line',
-    ].join('\n');
+    ].join(TextTokens.lineFeed);
     expect(messages.first.checksum, checksumOfBytes(utf8.encode(expectedRaw)));
   });
 

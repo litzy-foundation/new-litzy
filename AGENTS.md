@@ -136,6 +136,15 @@ versioned file or a `.env` file.
     engine-backed tests alone do not close a binary slice.
 45. SQL resources (R51): SQL lives only in standalone `.sql` files loaded by
     key, never embedded in Dart source.
+46. Named control characters (R52): control escapes never appear in Dart
+    source; `TextTokens` and a validation function provide their equivalent.
+47. Automatic access (R53): the user enters only an email address; discovery
+    is provider agnostic, TLS is mandatory, and credentials come from OAuth or
+    a secure form into the OS keychain with no plaintext or avoidable
+    vulnerabilities.
+48. App style and baseline (R54): one declarative style across all targets,
+    plus the identity, setup, settings, states and secure lifecycle that make
+    Litzy a real application.
 
 ## Fixed operational rules
 

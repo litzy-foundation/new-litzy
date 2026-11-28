@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:crypto/crypto.dart';
 
 import 'public_inbox_client.dart';
@@ -87,7 +88,8 @@ final class LocalMailParser {
     final headers = <String, String>{};
     String? lastHeader;
     for (final line in lines.take(separator)) {
-      if ((line.startsWith(' ') || line.startsWith('\t')) &&
+      if ((line.startsWith(TextTokens.space) ||
+              line.startsWith(TextTokens.horizontalTab)) &&
           lastHeader != null) {
         headers[lastHeader] = '${headers[lastHeader]} ${line.trim()}';
         continue;
@@ -102,20 +104,25 @@ final class LocalMailParser {
         .map((line) => line.startsWith('>From ') ? line.substring(1) : line)
         .toList();
     final headerLines = lines.take(separator).toList();
-    final raw = <String>[...headerLines, '', ...bodyLines].join('\n');
+    final raw = <String>[
+      ...headerLines,
+      '',
+      ...bodyLines,
+    ].join(TextTokens.lineFeed);
     return RawMessage(
       headers: headers,
-      body: bodyLines.join('\n'),
+      body: bodyLines.join(TextTokens.lineFeed),
       raw: raw,
       checksum: sha256.convert(utf8.encode(raw)).toString(),
     );
   }
 
   static List<String> _lines(String text) => text
-      .split('\n')
+      .split(TextTokens.lineFeed)
       .map(
-        (line) =>
-            line.endsWith('\r') ? line.substring(0, line.length - 1) : line,
+        (line) => line.endsWith(TextTokens.carriageReturn)
+            ? line.substring(0, line.length - 1)
+            : line,
       )
       .toList(growable: false);
 
@@ -130,5 +137,5 @@ final class LocalMailParser {
       file.uri.pathSegments.last.startsWith('.');
 
   static RawMessage _parseBlock(List<String> block) =>
-      parseMessage(block.skip(1).join('\n'));
+      parseMessage(block.skip(1).join(TextTokens.lineFeed));
 }

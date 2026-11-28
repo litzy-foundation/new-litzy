@@ -26,10 +26,12 @@ One source file defines one public class with one reason to change. Code refers
 to keys rather than literal values. Declarative values live in YAML, all SQL
 lives in standalone `.sql` resources loaded by key, and user-visible text lives
 in Fluent resources.
-Newline, tab and null characters are expressed through named representations
-rather than raw literals when a named form is available. A valid focused patch
-is accepted on its merits without ceremony beyond the permanent pull request
-rules.
+Newline, tab, carriage return, null and similar control characters are never
+written as raw escapes. Use `TextTokens` from `packages/core` for named
+characters and named protocol line endings, and its validation function when
+untrusted text must be checked. A guard rejects a raw escape that returns.
+A valid focused patch is accepted on its merits without ceremony beyond the
+permanent pull request rules.
 
 Before committing, format the source, run analysis at zero issues, check the
 diff for forbidden markers and verify that failure paths are tested.

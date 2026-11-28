@@ -29,3 +29,5 @@ flutter:
     - data/ui/theme.yaml
     - data/ui/subject_markers.yaml
     - data/app/profile.yaml
+    - data/access/policy.yaml
+    - data/quality/control_character_guard.yaml

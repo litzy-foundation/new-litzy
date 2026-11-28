@@ -1,5 +1,8 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:convert';
+
+import 'package:core/core.dart';
+
 import 'dart:io';
 
 /// One message served by [ImapFixture].
@@ -60,12 +63,14 @@ final class ImapFixture {
   }
 
   void _accept(Socket socket) {
-    socket.write('* OK [CAPABILITY ${capabilities.join(' ')}] ready\r\n');
+    socket.write(
+      '* OK [CAPABILITY ${capabilities.join(' ')}] ready${TextTokens.protocolLineEnding}',
+    );
     var buffer = '';
     socket.listen((bytes) {
       buffer += utf8.decode(bytes, allowMalformed: true);
-      while (buffer.contains('\r\n')) {
-        final end = buffer.indexOf('\r\n');
+      while (buffer.contains(TextTokens.protocolLineEnding)) {
+        final end = buffer.indexOf(TextTokens.protocolLineEnding);
         final line = buffer.substring(0, end);
         buffer = buffer.substring(end + 2);
         if (line.isEmpty) continue;
@@ -74,21 +79,31 @@ final class ImapFixture {
         final command = parts.skip(1).join(' ').toUpperCase();
         actions.add(command);
         if (command.startsWith('CAPABILITY')) {
-          socket.write('* CAPABILITY ${capabilities.join(' ')}\r\n');
-          socket.write('$tag OK done\r\n');
+          socket.write(
+            '* CAPABILITY ${capabilities.join(' ')}${TextTokens.protocolLineEnding}',
+          );
+          socket.write('$tag OK done${TextTokens.protocolLineEnding}');
         } else if (command.startsWith('LOGIN')) {
           if (rejectLogin) {
-            socket.write('$tag NO authentication failed\r\n');
+            socket.write(
+              '$tag NO authentication failed${TextTokens.protocolLineEnding}',
+            );
           } else {
-            socket.write('$tag OK logged in\r\n');
+            socket.write('$tag OK logged in${TextTokens.protocolLineEnding}');
           }
         } else if (command.startsWith('SELECT')) {
-          socket.write('* ${messages.length} EXISTS\r\n');
-          socket.write('$tag OK [READ-WRITE] selected\r\n');
+          socket.write(
+            '* ${messages.length} EXISTS${TextTokens.protocolLineEnding}',
+          );
+          socket.write(
+            '$tag OK [READ-WRITE] selected${TextTokens.protocolLineEnding}',
+          );
         } else if (command.startsWith('UID SEARCH')) {
           final uids = messages.map((message) => message.uid).join(' ');
-          socket.write('* SEARCH $uids\r\n');
-          socket.write('$tag OK search complete\r\n');
+          socket.write('* SEARCH $uids${TextTokens.protocolLineEnding}');
+          socket.write(
+            '$tag OK search complete${TextTokens.protocolLineEnding}',
+          );
         } else if (command.startsWith('UID FETCH')) {
           for (final message in messages) {
             final bytes = utf8.encode(message.raw);
@@ -96,29 +111,39 @@ final class ImapFixture {
                 ? '* ${message.uid} FETCH (RFC822 {${bytes.length}}'
                 : '* ${message.uid} FETCH (UID ${message.uid} RFC822 '
                       '{${bytes.length}}';
-            socket.write('$prefix\r\n');
+            socket.write('$prefix${TextTokens.protocolLineEnding}');
             socket.add(bytes);
-            socket.write(')\r\n');
+            socket.write(')${TextTokens.protocolLineEnding}');
           }
-          socket.write('$tag OK fetch complete\r\n');
+          socket.write(
+            '$tag OK fetch complete${TextTokens.protocolLineEnding}',
+          );
         } else if (command.startsWith('UID STORE')) {
           for (final message in messages) {
             socket.write(
               '* ${message.uid} FETCH (UID ${message.uid} '
-              'FLAGS (\\Seen))\r\n',
+              'FLAGS (\\Seen))${TextTokens.protocolLineEnding}',
             );
           }
-          socket.write('$tag OK store complete\r\n');
+          socket.write(
+            '$tag OK store complete${TextTokens.protocolLineEnding}',
+          );
         } else if (command.startsWith('UID MOVE') ||
             command.startsWith('UID COPY') ||
             command.startsWith('UID EXPUNGE') ||
             command.startsWith('CREATE')) {
-          socket.write('$tag OK action complete\r\n');
+          socket.write(
+            '$tag OK action complete${TextTokens.protocolLineEnding}',
+          );
         } else if (command.startsWith('LOGOUT')) {
-          socket.write('* BYE closing\r\n');
-          socket.write('$tag OK logout complete\r\n');
+          socket.write('* BYE closing${TextTokens.protocolLineEnding}');
+          socket.write(
+            '$tag OK logout complete${TextTokens.protocolLineEnding}',
+          );
         } else {
-          socket.write('$tag BAD unknown command\r\n');
+          socket.write(
+            '$tag BAD unknown command${TextTokens.protocolLineEnding}',
+          );
         }
       }
     });

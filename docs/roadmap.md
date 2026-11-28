@@ -297,11 +297,68 @@ profiles and the recorded Git mbox fixture. `mise exec -- dart format
 --output=none --set-exit-if-changed .`, `mise exec -- flutter pub run melos run
 analyze`, `mise exec -- flutter pub run melos run test` and `mise exec --
 flutter pub run melos run test:binary` all passed on 2026-11-28. An earlier run
-showed one transient migration test failure; isolated and repeated engine runs
-were green, and the final full run passed. All SQL statements now live in
+showed the two-process profile test failing only under the load of the full
+engine suite: the workers started after the five second readiness window had
+closed. The readiness window is now 35 seconds, the worker barrier is 30
+seconds and the test bound is 90 seconds; isolated and repeated runs stayed
+green and the final full run passed. All SQL statements now live in
 `packages/engine/sql` or `packages/engine/schema.sql`, and the guard reads its
 patterns from `data/quality/sql_guard.yaml`. This closes P20 for Linux and the
 SQL part of P15. macOS, Windows, Android and iOS remain unverified locally.
+
+## S15 — Automatic mail access
+
+Implement the engine part of the account setup flow of ADR-0025. A typed
+discovery request takes only an email address and returns non-secret endpoints
+with their trust source. A typed connection request verifies IMAP login
+without touching a mailbox and persists the settings in SQLite; the front-end
+owns `CredentialVault`, because a platform keychain adapter cannot be sent to
+the engine isolate. Discovery follows HTTPS autoconfiguration, DNS SRV and
+HTTPS Autodiscover in that order, with a derived fallback. A declarative
+policy under `data/access` holds timeouts, byte limits, ports and the redirect
+budget; it holds no provider names. TLS is mandatory and every hostile input
+has a deterministic typed error.
+
+Tests are written first with fake HTTPS, DNS and IMAP ports. They cover a
+redirect to plaintext, a cross-origin endpoint, an oversized document, an
+external XML entity, a control character in the address and a downgrade
+attempt. No test stores a real credential or contacts a real provider. The
+front-end surfaces, the CLI command and the platform `SecretStore` adapter
+remain separate work: no slice claims terminal or persistent account access
+until a non-echoing prompt and a native keychain adapter exist. No binary
+exposes the flow in this slice, so R50 acceptance applies when the first
+front-end builds it. Packaging the declarative policy beside a compiled client
+also belongs to that front-end slice. Status: engine verbs, ports, storage and
+tests complete; user-facing access remains tracked as P21.
+
+## S15a — Named control characters
+
+Give R52 a tested boundary. Extend `TextTokens` with the protocol line ending
+and a function that reports whether untrusted text contains a control
+character. Replace the raw escapes in the engine production source with those
+named members, then add a guard that reads its detection patterns from a
+declarative file under `data/quality` and fails when a raw escape returns.
+Inline test fixtures refer to named `TextTokens` members instead, so tests
+also stop embedding control escapes. Status: complete, with the named
+representation, the production and test migration and the declarative guard
+covering every Dart source directory. Evidence is recorded in P23.
+
+## S16 — Quiet Workshop style and real-app baseline
+
+Implement ADR-0026. The existing `data/ui/theme.yaml` becomes the single file
+of style tokens; colour, spacing, type, radius, elevation, density and motion
+are referenced by key from widgets. The desktop and mobile layouts keep the
+same tokens, and semantics, focus, text scaling, contrast and reduced motion
+are part of each screen. Onboarding, empty states, sync status, settings and
+account setup use Fluent messages from `l10n`.
+
+The baseline items are tracked separately: account setup in S15, composer and
+sending in S8, import and export in S12. This slice does not claim those
+slices as complete. A target is called covered only after the agent has
+launched its binary, and targets unavailable on this host stay unverified.
+The Quiet Workshop token file and the Flutter theme wiring are in place, but
+onboarding, settings, sync status and account setup screens are still planned.
+Status: partially implemented, tracked as P22.
 
 ## S6 — Flutter GUI
 

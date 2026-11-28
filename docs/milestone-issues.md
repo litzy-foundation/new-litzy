@@ -223,3 +223,53 @@ GUI run asserts the machine-readable `app.ready`, channel and topic markers;
 the CLI run asserts its JSON channel, topic and thread output. Both runs
 passed on 2026-11-28. macOS, Windows, Android and iOS were not built or
 launched on this machine and are not claimed as tested.
+
+## P21 — Automatic mail access is not implemented
+
+Access still requires the caller of the Mode B verb to know a host, a port, a
+list identifier and a password. The CLI has no Mode B command because no
+platform `SecretStore` adapter exists, and neither front-end can take an email
+address and derive the provider settings. The maintainer stated: "assicurati
+di non fare minchiate nel passaggio critico : l'accesso ; ricordo che devo
+poter accedere con tutti i provider mail ; io metto l'email e l'app configura
+automaticamente tutto" and "no credenziali in chiaro, no problemi di ogni tipo
+, no vulnerabilità eligibili". Status: open, tracked in S15. Evidence: R53
+records the directive and ADR-0025 records the trust model, the ordered
+discovery, the mandatory TLS, the keychain credential path and the hostile
+input checks. The typed discovery and connect verbs now derive endpoints from
+an address alone, verify an IMAP login without touching a mailbox and persist
+only non-secret settings; fake HTTPS, DNS and IMAP ports test plaintext
+redirects, cross-origin documents, oversized bodies, XML doctypes, control
+characters, out-of-policy ports and rejected logins. Manual operation was
+confirmed in this session: Mode C works from a YAML catalogue and the Mode B
+verb works against a loopback fixture. No front-end exposes automatic access
+because a non-echoing credential prompt and a native keychain adapter do not
+exist yet. This entry stays open until a user-facing path has binary acceptance
+evidence under R50.
+
+## P22 — App style and real-app baseline are incomplete
+
+The client has a reading interface and two colour tokens, but no declared
+visual style, no account setup, no settings surface, no onboarding state and
+no defined handling of sync status or offline use. The maintainer stated:
+"definsci lo stile stesso dell'app definisci il necessario per renderla un app
+vera e propria" and "non saprei, vedi tu il modo migliore". Status: tracked in
+S16. Evidence: R54 records the directive and ADR-0026 defines Quiet Workshop
+and the baseline of a real application. `data/ui/theme.yaml` now holds the
+style roles as keys, `ThemeConfig` parses them and `LitzyApp` takes its surface,
+reading and outline colours from that bundle. Onboarding, settings, sync
+status and account setup screens are still planned, so this entry stays open
+until the full baseline is implemented and verified.
+
+## P23 — Raw control-character escapes in source
+
+R47 asked for keys instead of literals, and the maintainer restated: "ho detto
+che monnezza come \n \t \r e similari non ne voglio , definisci o usa una
+function per fare il corrispettivo". `TextTokens` now names the line feed,
+carriage return, tab, null and protocol line ending, and its validation
+function reports control characters in untrusted text. Status: addressed.
+Evidence: R52 closes Q8, the four engine production files and every test
+fixture now use named tokens, `data/quality/control_character_guard.yaml`
+declares the forbidden sequences and the scanned directories, and
+`control_character_guard_test.dart` fails on any regression. The guard and the
+full suite passed on 2026-11-28.

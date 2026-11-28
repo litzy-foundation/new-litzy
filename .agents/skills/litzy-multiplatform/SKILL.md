@@ -11,6 +11,13 @@ a navigation stack on mobile. No platform is secondary, and a reduced
 feature set is acceptable only when the operating system forbids the
 operation. The web is out of scope until the maintainer decides otherwise.
 
+The Quiet Workshop style is defined by tokens in `data/ui/theme.yaml`. Widgets
+use token keys, Fluent text keys and a single adaptive layout resolver; they
+never carry literal colours, sizes or durations. Semantics, focus order, text
+scaling, contrast and reduced motion belong in each screen from the start.
+A real client also needs identity, account setup, settings, onboarding, empty
+states, sync status and offline behaviour, as recorded in ADR-0026.
+
 Platform-specific code belongs in packaging and in small native ports such
 as keychain access. Business rules stay in the engine and are reached
 through the typed protocol. iOS builds are manual on the maintainer's Apple

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
+
 import '../storage/local_database.dart';
 import 'public_inbox_client.dart';
 
@@ -67,10 +69,13 @@ final class NntpArticle {
             .trim();
       }
     }
-    final raw = '${headers.join('\n')}\n\n${body.join('\n')}';
+    final raw =
+        '${headers.join(TextTokens.lineFeed)}'
+        '${TextTokens.lineFeed}${TextTokens.lineFeed}'
+        '${body.join(TextTokens.lineFeed)}';
     return RawMessage(
       headers: headerMap,
-      body: body.join('\n'),
+      body: body.join(TextTokens.lineFeed),
       raw: raw,
       checksum: checksumOfBytes(utf8.encode(raw)),
     );
@@ -159,7 +164,7 @@ final class NntpClient {
   }
 
   NntpOverview _parseOverview(String line) {
-    final fields = line.split('\t');
+    final fields = line.split(TextTokens.horizontalTab);
     if (fields.length < 5) {
       throw const NntpException(224, 'malformed overview row');
     }
@@ -204,10 +209,10 @@ final class NntpClient {
   void _onBytes(List<int> bytes) {
     _buffer += utf8.decode(bytes, allowMalformed: true);
     while (true) {
-      final index = _buffer.indexOf('\r\n');
+      final index = _buffer.indexOf(TextTokens.protocolLineEnding);
       if (index < 0) return;
       final line = _buffer.substring(0, index);
-      _buffer = _buffer.substring(index + 2);
+      _buffer = _buffer.substring(index + TextTokens.protocolLineEnding.length);
       _handleLine(line);
     }
   }

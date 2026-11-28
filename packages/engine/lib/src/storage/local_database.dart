@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'account_record.dart';
 import 'channel_record.dart';
 import 'message_record.dart';
 import 'schema_file.dart';
@@ -454,6 +455,42 @@ final class LocalDatabase {
       SqlResources.statement(SqlKeys.countMessages),
     );
     return (rows.first['total'] as int?) ?? 0;
+  }
+
+  /// Stores one connected account without any secret material.
+  void upsertAccount(AccountRecord account) {
+    _database.execute(SqlResources.statement(SqlKeys.upsertAccount), [
+      account.id,
+      account.email,
+      account.imapHost,
+      account.imapPort,
+      account.smtpHost,
+      account.smtpPort,
+      account.authentication,
+      account.listId,
+      account.createdAt,
+    ]);
+  }
+
+  /// Returns the stored account with [id], or null when absent.
+  AccountRecord? accountOf(String id) {
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.selectAccount),
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return (
+      id: row['id'] as String,
+      email: row['email'] as String,
+      imapHost: row['imap_host'] as String,
+      imapPort: row['imap_port'] as int,
+      smtpHost: row['smtp_host'] as String,
+      smtpPort: row['smtp_port'] as int,
+      authentication: row['authentication'] as String,
+      listId: row['list_id'] as String,
+      createdAt: row['created_at'] as int,
+    );
   }
 
   /// Writes a copy of the database to [destination] for a durable backup.
