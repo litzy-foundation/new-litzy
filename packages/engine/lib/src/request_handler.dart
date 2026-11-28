@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:protocol/protocol.dart';
 
 import 'ingestion/mode_c_sync_service.dart';
+import 'storage/blob_store.dart';
 import 'storage/local_blob_store.dart';
 import 'storage/local_database.dart';
+import 'storage/sqlite_blob_store.dart';
 import 'storage/message_record.dart';
 
 /// Executes typed LMLP requests against the local profile.
@@ -14,7 +16,7 @@ import 'storage/message_record.dart';
 /// must be answered here before it can cross the isolate boundary.
 final class EngineRequestHandler {
   LocalDatabase? _database;
-  LocalBlobStore? _blobs;
+  BlobStore? _blobs;
 
   /// Answers [request] with a typed response or a deterministic error.
   Future<LmlpResponse> handle(LmlpRequest request) async {
@@ -51,9 +53,14 @@ final class EngineRequestHandler {
           request.blobsDirectory ??
           '${File(request.databasePath).parent.path}'
               '${Platform.pathSeparator}blobs';
-      _blobs = LocalBlobStore(Directory(blobsDirectory));
-      _database = LocalDatabase.open(request.databasePath);
+      final database = LocalDatabase.open(request.databasePath);
+      _database = database;
+      _blobs = switch (request.blobBackend) {
+        BlobBackend.folder => LocalBlobStore(Directory(blobsDirectory)),
+        BlobBackend.sqlite => SqliteBlobStore(database),
+      };
     } catch (_) {
+      _close();
       return ErrorResponse(
         request.id,
         'profile_open_failed',

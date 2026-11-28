@@ -2,7 +2,7 @@
 import 'dart:convert';
 
 import '../storage/channel_record.dart';
-import '../storage/local_blob_store.dart';
+import '../storage/blob_store.dart';
 import '../storage/local_database.dart';
 import '../storage/message_record.dart';
 import 'public_inbox_client.dart';
@@ -36,7 +36,7 @@ final class ModeCIngestor {
   final LocalDatabase database;
 
   /// Content-addressed folder holding the raw message sources.
-  final LocalBlobStore blobs;
+  final BlobStore blobs;
 
   /// Verifies and persists [messages] for [channel], returning their count.
   int ingest(ChannelRecord channel, Iterable<RawMessage> messages) {

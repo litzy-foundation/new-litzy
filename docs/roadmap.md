@@ -67,11 +67,14 @@ content.
 
 Partially landed: `LocalDatabase` creates the schema, persists batches in a
 single transaction, reads threads with a bounded `WITH RECURSIVE` query,
-searches with FTS5 and exposes a `VACUUM INTO` backup. `LocalBlobStore`
-implements the content-addressed folder and rejects a file whose bytes no
-longer match its digest. Tests are green. Still to do: the SQLite blob table
-with the Zstd binding and the Drift mapping that replaces the direct
-`sqlite3` statements while keeping the same SQL.
+searches with FTS5 and exposes a `VACUUM INTO` backup. Both blob backends now
+implement the `BlobStore` port. `LocalBlobStore` keeps the content-addressed
+folder and rejects a file whose bytes no longer match its digest.
+`SqliteBlobStore` keeps a Zstd frame and its uncompressed size in the same
+database, so one file is a complete backup. Both backends are selected by a
+typed field on the open request, and tests cover them through identical
+calls. Still to do: the Drift mapping that replaces the direct `sqlite3`
+statements while keeping the same SQL.
 
 ## S3 — Mode C ingestion
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'package:test/test.dart';
+import 'package:protocol/protocol.dart';
 import 'package:cli/cli.dart';
 
 void main() {
@@ -46,6 +47,33 @@ void main() {
 
     expect((search.command as SearchCommand).terms, 'two words');
     expect((thread.command as ThreadCommand).rootId, 'm1@example.invalid');
+  });
+
+  test('the SQLite blob backend is selected by an option', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      '--blob-backend',
+      'sqlite',
+      'search',
+      'terms',
+    ]);
+
+    expect(parsed.blobBackend, BlobBackend.sqlite);
+  });
+
+  test('an unknown blob backend is rejected', () {
+    expect(
+      () => parseCommandLine([
+        '--database',
+        'p.db',
+        '--blob-backend',
+        'object-store',
+        'search',
+        'terms',
+      ]),
+      throwsA(isA<CliUsageException>()),
+    );
   });
 
   test('data verbs require a database path', () {

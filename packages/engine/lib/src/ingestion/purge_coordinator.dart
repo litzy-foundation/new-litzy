@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
-import '../storage/local_blob_store.dart';
+import '../storage/blob_store.dart';
 import '../storage/local_database.dart';
 import 'mailbox_action.dart';
 import 'mailbox_port.dart';
@@ -99,7 +99,7 @@ final class PurgeCoordinator {
   final LocalDatabase database;
 
   /// Content-addressed store holding the verified bytes.
-  final LocalBlobStore blobs;
+  final BlobStore blobs;
 
   /// Mailbox port on which the second phase acts.
   final MailboxPort mailbox;

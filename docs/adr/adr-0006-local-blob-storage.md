@@ -21,16 +21,22 @@ database remains the index and the authority for which content exists. No
 object store adapter is shipped. The choice between the two local backends
 is a configuration decision and both implement the same port.
 
-The first slice implements the content-addressed folder with verified
-digests and raw bytes. The Zstd binding and the SQLite blob table are
-tracked as the next part of this slice in `roadmap.md`; shipping the store
-without them is a deliberate staging decision, not a change to the chosen
-architecture.
+Both backends are now implemented behind a single `BlobStore` port with
+`put`, `get` and `verify`. The folder backend writes raw bytes to a file named
+by the SHA-256 digest. The SQLite backend stores a Zstd frame together with
+the codec name and the uncompressed size, and accepts a row only when
+decompression, size and digest all agree. A front-end selects the backend
+through the typed open request, so the choice belongs to profile
+configuration rather than to ingestion or mailbox logic. The folder remains
+the default so existing profiles keep their current layout.
 
 ## Consequences
 
 A user can back up the application by copying one file when the blob table
 is selected, and deduplication comes for free with content addressing in
-the folder variant. Large attachments may favour the folder variant because
-they do not inflate the database. Tests must cover both backends through
-the same port so neither becomes an untested alternative.
+both variants, because a repeated digest inserts no new row or file. Large
+attachments may favour the folder variant because they do not inflate the
+database. The Zstd frame is bounded on read by the recorded uncompressed
+size and by a maximum, so a hostile payload cannot request an unbounded
+allocation. Tests cover both backends through the same port, including
+corrupted content and a backup taken from the SQLite profile.
