@@ -138,9 +138,12 @@ separate processes that write to one profile without a daemon or lock service.
 The engine and CLI already read public lists from local fixtures, but there is
 no GUI package and no direct daily path for `git@vger.kernel.org`. The
 maintainer asked to read that list from both CLI and GUI without credentials.
-Status: tracked in S10 and S11. Evidence: R45 records the goal, the catalogue
-already names the list, and the existing binary test proves the engine and CLI
-path with local fixtures.
+Status: partially addressed in S10, with the GUI still tracked in S11.
+Evidence: R45 records the goal, ADR-0021 fixes the reading path, the engine
+resolves default values from `data/catalog/default.yaml`, and the CLI exposes
+`channels`, `list` and `show`. Acceptance tests drive the real binary against
+local NNTP and public-inbox fixtures without a credential. The GUI remains
+unbuilt until S11.
 
 ## P15 — Hardcoded literals and inline schema
 

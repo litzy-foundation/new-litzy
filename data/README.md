@@ -9,10 +9,11 @@ system keychain.
 
 The `catalog` directory holds the YAML list catalogue for Mode C. Each entry
 names a list, its protocol, its list identifier and the endpoints that can
-serve it. The `rulesets` directory holds classification rules, including the
-newsletter defaults. The `fixtures` directory holds named fixtures used by
-tests. A `local` directory may be created for development-only data and is
-git-ignored; it never enters the repository.
+serve it. The `default.yaml` file names the catalogue and source used when a
+front-end omits those flags. The `rulesets` directory holds classification
+rules, including the newsletter defaults. The `fixtures` directory holds named
+fixtures used by tests. A `local` directory may be created for development-only
+data and is git-ignored; it never enters the repository.
 
 ## Validation
 

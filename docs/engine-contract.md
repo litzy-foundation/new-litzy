@@ -9,7 +9,9 @@ interface described in ADR-0016.
 ## Interface
 
 `LmlpEngine` exposes asynchronous methods for profile, ingestion, search,
-thread, triage and audit operations. Progress and state changes are delivered
+thread, triage and audit operations. Reading verbs list persisted channels and
+topic summaries and show one reconstructed thread, so both front-ends use the
+same path through public lists. Progress and state changes are delivered
 through streams for channels, thread trees and messages. Values are immutable
 and final so a caller cannot mutate an object after it crosses the isolate
 boundary. The message vocabulary remains a sealed union inside the engine so

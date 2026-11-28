@@ -502,10 +502,10 @@ planned feature is never advertised as present.
 | Q9 | Should the Flutter GUI package be created now, or should the first credential-free slice prove the CLI against real Git list data? | Closed by the maintainer's explicit request for both: CLI first in S10, GUI next in S11, as recorded in R45 |
 | Q10 | Which formats and triggers do import, export, autoimport and autoexport use in the first slice? | Closed by R48: mbox and Maildir import, mbox export, YAML rules triggered after sync |
 | Q11 | Where are the public description and discoverability tags published? | Closed by R49: versioned YAML, README and GitHub repository metadata in S13 |
-| Q12 | Is WAL with a five second busy timeout enough, or is a shared write lock needed from the first two-front-end test? | Open, recorded by R44 and tested in S9 |
+| Q12 | Is WAL with a five second busy timeout enough, or is a shared write lock needed from the first two-front-end test? | Closed by S9: two real processes write to one profile with WAL and a five second busy timeout, so no shared lock is added |
 | Q13 | Should the thread builder and quote or diff analyzer be restored from the preserved backup or reimplemented against the current engine contract? | Closed: restore and adapt the preserved algorithms in S14, because their tests cover hostile reference chains and real patch bodies |
 
 Decisions recorded in this cycle close the questions about front-end order,
-transfer formats, publication place and algorithm provenance. Q8 and Q12 stay
-open because their answers require a tested code slice rather than a naming
-choice.
+transfer formats, publication place, algorithm provenance and SQLite
+contention. Q8 stays open because its answer requires a tested code slice
+rather than a naming choice.

@@ -42,7 +42,13 @@ final class EngineRequestHandler {
       case SearchRequest():
         return _search(request);
       case ThreadRequest():
-        return _thread(request);
+        return _thread(request.id, request.rootId);
+      case ShowThreadRequest():
+        return _thread(request.id, request.rootId);
+      case ListChannelsRequest():
+        return _channels(request);
+      case ListThreadsRequest():
+        return _threads(request);
       case AuditRequest():
         return _audit(request);
       case CreateDraftRequest():
@@ -184,12 +190,12 @@ final class EngineRequestHandler {
     }
   }
 
-  LmlpResponse _thread(ThreadRequest request) {
+  LmlpResponse _thread(String id, String rootId) {
     final database = _database;
-    if (database == null) return _notOpen(request.id);
+    if (database == null) return _notOpen(id);
     try {
       final messages = database
-          .subtree(request.rootId)
+          .subtree(rootId)
           .map(
             (record) => MessageData(
               id: record.id,
@@ -203,12 +209,52 @@ final class EngineRequestHandler {
               checksum: record.checksum,
             ),
           );
-      return ThreadResponse(request.id, messages.toList());
+      return ThreadResponse(id, messages.toList());
+    } catch (_) {
+      return ErrorResponse(id, 'thread_failed', 'the thread could not be read');
+    }
+  }
+
+  LmlpResponse _channels(ListChannelsRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      return ChannelListResponse(
+        request.id,
+        database.channels
+            .map(
+              (channel) => (
+                id: channel.id,
+                listId: channel.listId,
+                label: channel.label,
+                protocol: channel.protocol,
+                endpoint: channel.endpoint,
+              ),
+            )
+            .toList(growable: false),
+      );
     } catch (_) {
       return ErrorResponse(
         request.id,
-        'thread_failed',
-        'the thread could not be read',
+        'channel_list_failed',
+        'the channels could not be listed',
+      );
+    }
+  }
+
+  LmlpResponse _threads(ListThreadsRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      return ThreadListResponse(
+        request.id,
+        database.threadSummaries(channelId: request.channelId).toList(),
+      );
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'thread_list_failed',
+        'the topics could not be listed',
       );
     }
   }

@@ -7,6 +7,7 @@ import '../storage/local_database.dart';
 import '../storage/sync_cursor.dart';
 import 'catalog.dart';
 import 'channel_mapper.dart';
+import 'default_catalogue.dart';
 import 'list_message_ingestor.dart';
 import 'nntp_client.dart';
 import 'public_inbox_client.dart';
@@ -34,13 +35,23 @@ final class ModeCSyncService {
   /// commits, so a rejected message can be fetched again on the next sync.
   Future<SyncResponse> sync(
     String id,
-    String cataloguePath,
-    String sourceId,
+    String? cataloguePath,
+    String? sourceId,
   ) async {
-    final sources = CatalogLoader.load(cataloguePath);
+    final String path;
+    final String selectedSource;
+    if (cataloguePath == null || sourceId == null) {
+      final defaults = DefaultCatalogue.resolve();
+      path = cataloguePath ?? defaults.cataloguePath;
+      selectedSource = sourceId ?? defaults.sourceId;
+    } else {
+      path = cataloguePath;
+      selectedSource = sourceId;
+    }
+    final sources = CatalogLoader.load(path);
     ListSource? source;
     for (final candidate in sources) {
-      if (candidate.id == sourceId) {
+      if (candidate.id == selectedSource) {
         source = candidate;
         break;
       }
@@ -48,7 +59,7 @@ final class ModeCSyncService {
     if (source == null) {
       throw ListMessageIngestException(
         'unknown_source',
-        'source $sourceId is not in the catalogue',
+        'source $selectedSource is not in the catalogue',
       );
     }
     final channel = ChannelMapper.fromSource(source);

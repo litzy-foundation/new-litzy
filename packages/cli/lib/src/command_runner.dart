@@ -66,6 +66,9 @@ Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
     SyncCommand(:final cataloguePath, :final sourceId) => [
       SyncRequest(id, cataloguePath, sourceId),
     ],
+    ChannelsCommand() => [ListChannelsRequest(id)],
+    ListCommand(:final channelId) => [ListThreadsRequest(id, channelId)],
+    ShowCommand(:final rootId) => [ShowThreadRequest(id, rootId)],
     SearchCommand(:final terms) => [SearchRequest(id, terms)],
     ThreadCommand(:final rootId) => [ThreadRequest(id, rootId)],
     ReplyCommand(:final messageId, :final body) => [
@@ -101,6 +104,38 @@ CliResult _format(LmlpResponse response) => switch (response) {
     exitCode: 0,
     output: jsonEncode({'ids': messageIds}),
   ),
+  ChannelListResponse(:final channels) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({
+      'channels': channels
+          .map(
+            (ChannelView channel) => {
+              'id': channel.id,
+              'listId': channel.listId,
+              'label': channel.label,
+              'protocol': channel.protocol,
+              'endpoint': channel.endpoint,
+            },
+          )
+          .toList(),
+    }),
+  ),
+  ThreadListResponse(:final threads) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({
+      'threads': threads
+          .map(
+            (ThreadSummary thread) => {
+              'rootId': thread.rootId,
+              'listId': thread.listId,
+              'subject': thread.subject,
+              'messageCount': thread.messageCount,
+              'lastActivityEpoch': thread.lastActivityEpoch,
+            },
+          )
+          .toList(),
+    }),
+  ),
   ThreadResponse(:final messages) => CliResult(
     exitCode: 0,
     output: jsonEncode({
@@ -108,7 +143,11 @@ CliResult _format(LmlpResponse response) => switch (response) {
           .map(
             (message) => {
               'id': message.id,
+              'rootId': message.threadRootId,
+              'parentId': message.parentId,
               'subject': message.subject,
+              'from': message.fromAddress,
+              'date': message.dateEpoch,
               'body': message.body,
             },
           )

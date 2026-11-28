@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Local public-inbox fixture for credential-free Git reading tests.
+# Implements R45 and ADR-0021.
+
+version: 1
+sources:
+  - id: git
+    label: Git development list
+    list_id: git@vger.kernel.org
+    protocols:
+      public_inbox:
+        base_url: http://127.0.0.1:__PORT__/git/
+        atom_path: new.atom
+        thread_path_suffix: /t.mbox.gz
