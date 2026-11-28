@@ -2,7 +2,7 @@
 import 'package:protocol/protocol.dart';
 
 import '../storage/channel_record.dart';
-import '../storage/local_blob_store.dart';
+import '../storage/blob_store.dart';
 import '../storage/local_database.dart';
 import 'catalog.dart';
 import 'channel_mapper.dart';
@@ -23,7 +23,7 @@ final class ModeCSyncService {
   final LocalDatabase database;
 
   /// Folder that receives the raw message content.
-  final LocalBlobStore blobs;
+  final BlobStore blobs;
 
   /// Fetches [sourceId] from [cataloguePath] and persists its messages.
   Future<SyncResponse> sync(

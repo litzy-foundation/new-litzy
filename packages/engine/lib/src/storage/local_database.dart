@@ -1,11 +1,15 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'channel_record.dart';
 import 'message_record.dart';
+
+/// A compressed content row with the codec used and the uncompressed size.
+typedef StoredBlob = ({String codec, int size, Uint8List payload});
 
 /// The local SQLite store for messages, threads and full-text search.
 ///
@@ -68,6 +72,14 @@ final class LocalDatabase {
       CREATE TABLE IF NOT EXISTS quarantine_entries (
         message_id TEXT PRIMARY KEY,
         quarantined_at INTEGER NOT NULL
+      )
+    ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS blobs (
+        digest TEXT PRIMARY KEY,
+        codec TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        payload BLOB NOT NULL
       )
     ''');
     _database.execute('''
@@ -176,6 +188,32 @@ final class LocalDatabase {
     );
     if (rows.isEmpty) return null;
     return rows.first['checksum'] as String;
+  }
+
+  /// Stores a compressed blob once, keyed by its uncompressed digest.
+  void putBlob(String digest, String codec, int size, List<int> payload) {
+    _database.execute(
+      '''
+      INSERT OR IGNORE INTO blobs (digest, codec, size, payload)
+      VALUES (?, ?, ?, ?)
+      ''',
+      [digest, codec, size, Uint8List.fromList(payload)],
+    );
+  }
+
+  /// Returns the stored blob for [digest], or null when absent.
+  StoredBlob? blobOf(String digest) {
+    final rows = _database.select(
+      'SELECT codec, size, payload FROM blobs WHERE digest = ?',
+      [digest],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return (
+      codec: row['codec'] as String,
+      size: row['size'] as int,
+      payload: row['payload'] as Uint8List,
+    );
   }
 
   /// Records the mailbox policy chosen for [listId].

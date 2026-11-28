@@ -139,6 +139,54 @@ sources:
     },
   );
 
+  test('the SQLite blob backend keeps one profile file', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final server = await _startNntpServer();
+    addTearDown(() => server.close());
+    final catalogue = File(
+      '${harness.directory.path}${Platform.pathSeparator}lists.yaml',
+    );
+    catalogue.writeAsStringSync('''
+version: 1
+sources:
+  - id: git
+    label: Git
+    list_id: git@vger.kernel.org
+    protocols:
+      nntp:
+        host: 127.0.0.1
+        port: ${server.port}
+        newsgroup: lore.git
+''');
+
+    final synced = await harness.run([
+      '--blob-backend',
+      'sqlite',
+      'sync',
+      '--catalogue',
+      catalogue.path,
+      '--source',
+      'git',
+    ]);
+    final found = await harness.run([
+      '--blob-backend',
+      'sqlite',
+      'search',
+      'first body line',
+    ]);
+
+    expect(_jsonObject(synced.stdout), {'channelId': 'git', 'count': 1});
+    expect(_jsonObject(found.stdout), {
+      'ids': ['m1@example.invalid'],
+    });
+    expect(
+      Directory('${harness.directory.path}${Platform.pathSeparator}blobs')
+          .existsSync(),
+      isFalse,
+    );
+  });
+
   test('a failed sync exits nonzero with a stable code', () async {
     final harness = _Harness(root);
     addTearDown(harness.close);

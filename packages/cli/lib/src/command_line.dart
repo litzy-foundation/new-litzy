@@ -1,4 +1,6 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
+import 'package:protocol/protocol.dart';
+
 /// Reports command-line input that cannot be mapped to a typed request.
 final class CliUsageException implements Exception {
   /// Creates a usage error with a readable [message].
@@ -59,6 +61,7 @@ final class ParsedCliCommand {
   const ParsedCliCommand({
     this.databasePath,
     this.blobsDirectory,
+    this.blobBackend = BlobBackend.folder,
     required this.command,
   });
 
@@ -67,6 +70,9 @@ final class ParsedCliCommand {
 
   /// Optional folder for raw message content.
   final String? blobsDirectory;
+
+  /// Backend selected for raw message content.
+  final BlobBackend blobBackend;
 
   /// Operation to execute.
   final CliCommand command;
@@ -99,6 +105,7 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
   }
   final argument = positional.isEmpty ? null : positional.single;
   final blobs = options['blobs'];
+  final backend = _blobBackend(options['blob-backend']);
 
   switch (name) {
     case 'ping':
@@ -108,6 +115,7 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
+        blobBackend: backend,
         command: const PingCommand(),
       );
     case 'sync':
@@ -125,6 +133,7 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
+        blobBackend: backend,
         command: SyncCommand(catalogue, source),
       );
     case 'search':
@@ -134,6 +143,7 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
+        blobBackend: backend,
         command: SearchCommand(argument),
       );
     case 'thread':
@@ -143,9 +153,16 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
       return ParsedCliCommand(
         databasePath: database,
         blobsDirectory: blobs,
+        blobBackend: backend,
         command: ThreadCommand(argument),
       );
     default:
       throw CliUsageException('unknown command $name');
   }
 }
+
+BlobBackend _blobBackend(String? value) => switch (value) {
+  null || 'folder' => BlobBackend.folder,
+  'sqlite' => BlobBackend.sqlite,
+  _ => throw CliUsageException('unknown blob backend $value'),
+};

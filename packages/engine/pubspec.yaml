@@ -13,5 +13,6 @@ dependencies:
   sqlite3: ^2.9.4
   xml: ^7.1.0
   yaml: ^3.1.4
+  zstd_dart: ^1.2.0
 dev_dependencies:
   test: ^1.33.0

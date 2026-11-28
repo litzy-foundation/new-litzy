@@ -3,12 +3,14 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 
+import 'blob_store.dart';
+
 /// A content-addressed folder for raw message content.
 ///
 /// ADR-0006 allows this backend as an alternative to SQLite blobs. The
 /// digest is the file name, so identical content is stored once and a
 /// checksum gate can verify a file before any destructive action.
-final class LocalBlobStore {
+final class LocalBlobStore implements BlobStore {
   /// Creates a store rooted at [directory], creating it when absent.
   LocalBlobStore(Directory directory) : _directory = directory {
     if (!_directory.existsSync()) {
@@ -19,6 +21,7 @@ final class LocalBlobStore {
   final Directory _directory;
 
   /// Stores [bytes] and returns their SHA-256 digest.
+  @override
   String put(List<int> bytes) {
     final digest = sha256.convert(bytes).toString();
     final file = File('${_directory.path}${Platform.pathSeparator}$digest');
@@ -29,6 +32,7 @@ final class LocalBlobStore {
   }
 
   /// Reads the content for [digest], or null when it is absent.
+  @override
   List<int>? get(String digest) {
     final file = File('${_directory.path}${Platform.pathSeparator}$digest');
     if (!file.existsSync()) return null;
@@ -37,5 +41,6 @@ final class LocalBlobStore {
   }
 
   /// Whether the stored content still matches its digest.
+  @override
   bool verify(String digest) => get(digest) != null;
 }
