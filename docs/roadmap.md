@@ -124,8 +124,18 @@ The maintainer decided that a `.env` file is not used for management and
 that the app manages credentials through OAuth and other secure mechanisms.
 This slice removes `.env.example` from the versioned tree and introduces the
 in-app credential flow with token storage in the operating system keychain.
-Tests will use a fake keychain port and a fake OAuth provider; no real
-credential is stored in the repository or in a test fixture.
+Tests use a fake keychain port and a fake OAuth provider; no real credential
+is stored in the repository or in a test fixture.
+
+Partially landed: `packages/security` defines the `SecretStore` and
+`OAuthProvider` ports and a `CredentialVault` that exchanges an OAuth code,
+accepts a password from a secure form, reads credentials and forgets them.
+Failures are deterministic codes for an unknown provider, a rejected code, a
+corrupt stored token and an unavailable keychain. Tests drive fakes and prove
+that no secret is written to a versioned file or a fixture. Still to do: the
+platform adapters for `flutter_secure_storage` and libsecret, the browser
+redirect handling in the GUI, and the use of stored credentials by the IMAP
+and SMTP transports.
 
 ## S5 — Terminal client
 

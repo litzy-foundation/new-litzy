@@ -52,7 +52,8 @@ Credentials previously had to be protected from a network boundary that no
 longer exists. Status: addressed by design in R35 and ADR-0007. Evidence:
 secrets enter the app through OAuth or a secure credential form and live in
 the operating system keychain, and no token or mutual TLS is used between
-client and engine.
+client and engine. `packages/security` now supplies the keychain and OAuth
+ports with fake-based tests; the native adapters remain in S4a.
 
 ## P8 — Environment file as a credential surface
 
@@ -62,7 +63,9 @@ app through OAuth and other secure mechanisms instead. Status: addressed by
 the decision in R37 and ADR-0007. Evidence: `requirements.md` records the
 supersession of R9, the versioned `.env.example` is removed, and the
 credential flow is tracked in S4a with keychain storage and fake OAuth
-tests. Any local `.env` already on a machine stays there and is git-ignored;
+tests. `CredentialVault` now carries that flow behind ports, and its tests
+use only fake secrets. The native keychain adapters are still to be added.
+Any local `.env` already on a machine stays there and is git-ignored;
 nothing is removed from the local machine.
 
 ## P7 — Full rebuild without local loss
