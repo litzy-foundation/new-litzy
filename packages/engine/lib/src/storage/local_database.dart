@@ -12,6 +12,9 @@ import 'sync_cursor.dart';
 /// A compressed content row with the codec used and the uncompressed size.
 typedef StoredBlob = ({String codec, int size, Uint8List payload});
 
+/// A stored reply draft with its source message and prepared content.
+typedef StoredDraft = ({String messageId, String subject, String body});
+
 /// The local SQLite store for messages, threads and full-text search.
 ///
 /// ADR-0005 chooses recursive queries and FTS5, and ADR-0002 makes this the
@@ -87,6 +90,15 @@ final class LocalDatabase {
       CREATE TABLE IF NOT EXISTS sync_cursors (
         channel_id TEXT PRIMARY KEY,
         cursor TEXT NOT NULL
+      )
+    ''');
+    _database.execute('''
+      CREATE TABLE IF NOT EXISTS drafts (
+        id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body TEXT NOT NULL,
+        created_at INTEGER NOT NULL
       )
     ''');
     _database.execute('''
@@ -189,6 +201,50 @@ final class LocalDatabase {
       label: row['label'] as String,
       protocol: row['protocol'] as String,
       endpoint: row['endpoint'] as String,
+    );
+  }
+
+  /// Returns one persisted message, or null when [id] is absent.
+  MessageRecord? messageOf(String id) {
+    final rows = _database.select('SELECT * FROM messages WHERE id = ?', [id]);
+    if (rows.isEmpty) return null;
+    return _toRecord(rows.first);
+  }
+
+  /// Stores or replaces the reply draft with [id].
+  void saveDraft(
+    String id,
+    String messageId,
+    String subject,
+    String body,
+    int createdAt,
+  ) {
+    _database.execute(
+      '''
+      INSERT INTO drafts (id, message_id, subject, body, created_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        message_id = excluded.message_id,
+        subject = excluded.subject,
+        body = excluded.body,
+        created_at = excluded.created_at
+      ''',
+      [id, messageId, subject, body, createdAt],
+    );
+  }
+
+  /// Returns the stored draft with [id], or null when absent.
+  StoredDraft? draftOf(String id) {
+    final rows = _database.select(
+      'SELECT message_id, subject, body FROM drafts WHERE id = ?',
+      [id],
+    );
+    if (rows.isEmpty) return null;
+    final row = rows.first;
+    return (
+      messageId: row['message_id'] as String,
+      subject: row['subject'] as String,
+      body: row['body'] as String,
     );
   }
 

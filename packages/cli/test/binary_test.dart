@@ -208,6 +208,42 @@ sources:
     expect(result.stderr as String, contains('sync_failed'));
   });
 
+  test('reply stores a quoted draft through the real binary', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final setup = LocalDatabase.open(harness.database);
+    setup.insertMessages([
+      MessageRecord(
+        id: 'm1@example.invalid',
+        listId: 'git@vger.kernel.org',
+        subject: 'binary subject',
+        fromAddress: 'author@example.invalid',
+        dateEpoch: 1000,
+        parentId: null,
+        threadRootId: 'm1@example.invalid',
+        body: 'binary body',
+        checksum: checksumOfBytes('binary body'.codeUnits),
+      ),
+    ]);
+    setup.close();
+
+    final result = await harness.run([
+      'reply',
+      'm1@example.invalid',
+      '--body',
+      'my binary reply',
+    ]);
+
+    expect(result.exitCode, 0);
+    final draft = _jsonObject(result.stdout);
+    expect(draft['messageId'], 'm1@example.invalid');
+    expect(draft['subject'], 'Re: binary subject');
+    expect(draft['body'], contains('> binary body'));
+    final reopened = LocalDatabase.open(harness.database);
+    addTearDown(reopened.close);
+    expect(reopened.draftOf(draft['draftId']! as String), isNotNull);
+  });
+
   test('a local mbox imports through the real binary', () async {
     final harness = _Harness(root);
     addTearDown(harness.close);

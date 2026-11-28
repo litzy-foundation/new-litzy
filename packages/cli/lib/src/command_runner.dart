@@ -69,6 +69,9 @@ Future<List<LmlpRequest>> _requestsOf(ParsedCliCommand parsed) async {
     ],
     SearchCommand(:final terms) => [SearchRequest(id, terms)],
     ThreadCommand(:final rootId) => [ThreadRequest(id, rootId)],
+    ReplyCommand(:final messageId, :final body) => [
+      CreateDraftRequest(id, messageId, body),
+    ],
     ImportCommand(:final path, :final format) => [
       ImportRequest(id, path, format),
     ],
@@ -113,6 +116,21 @@ CliResult _format(LmlpResponse response) => switch (response) {
           .toList(),
     }),
   ),
+  DraftResponse(
+    :final draftId,
+    :final messageId,
+    :final subject,
+    :final body,
+  ) =>
+    CliResult(
+      exitCode: 0,
+      output: jsonEncode({
+        'draftId': draftId,
+        'messageId': messageId,
+        'subject': subject,
+        'body': body,
+      }),
+    ),
   ImportResponse(:final count) => CliResult(
     exitCode: 0,
     output: jsonEncode({'count': count}),

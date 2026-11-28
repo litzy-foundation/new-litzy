@@ -9,6 +9,7 @@ export 'src/engine_client.dart';
 export 'src/engine_isolate.dart';
 export 'src/ingestion/audit_service.dart';
 export 'src/ingestion/catalog.dart';
+export 'src/ingestion/draft_service.dart';
 export 'src/ingestion/channel_mapper.dart';
 export 'src/ingestion/local_import_service.dart';
 export 'src/ingestion/local_mail_parser.dart';

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:protocol/protocol.dart';
 
 import 'ingestion/audit_service.dart';
+import 'ingestion/draft_service.dart';
 import 'ingestion/local_import_service.dart';
 import 'ingestion/local_mail_parser.dart';
 import 'ingestion/mode_c_sync_service.dart';
@@ -41,6 +42,8 @@ final class EngineRequestHandler {
         return _thread(request);
       case AuditRequest():
         return _audit(request);
+      case CreateDraftRequest():
+        return _createDraft(request);
       case ImportRequest():
         return _import(request);
       case SetTriageRequest():
@@ -196,6 +199,30 @@ final class EngineRequestHandler {
         request.id,
         'audit_failed',
         'the inbox snapshot could not be audited',
+      );
+    }
+  }
+
+  LmlpResponse _createDraft(CreateDraftRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      final draft = DraftService(database: database)
+          .create(request.messageId, request.body);
+      return DraftResponse(
+        request.id,
+        draft.draftId,
+        draft.messageId,
+        draft.subject,
+        draft.body,
+      );
+    } on DraftException catch (error) {
+      return ErrorResponse(request.id, error.code, error.message);
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'draft_failed',
+        'the reply draft was not stored',
       );
     }
   }

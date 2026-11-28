@@ -27,7 +27,11 @@ been read and whether the user starred it. Both live in the `messages` table
 so an existing profile gains them through a migration. The engine exposes
 one verb to change a flag and one to read both back, and the front-ends never
 write SQLite directly. Draft replies also live in SQLite because they are
-mutable runtime state, not declarative configuration.
+mutable runtime state, not declarative configuration. A draft has one stable
+identifier per source message, so writing a reply again replaces that draft
+instead of adding a second copy. The engine builds the quoted body and returns
+it to the front-end. No outbound transport is part of this decision; sending
+belongs to the outbound slice.
 
 ## Consequences
 
