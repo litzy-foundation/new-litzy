@@ -41,7 +41,6 @@ Future<CliResult> runCommand(ParsedCliCommand parsed) async {
           'open',
           parsed.databasePath!,
           blobsDirectory: parsed.blobsDirectory,
-          blobBackend: parsed.blobBackend,
         ),
       );
       if (opened case ErrorResponse(:final code, :final message)) {

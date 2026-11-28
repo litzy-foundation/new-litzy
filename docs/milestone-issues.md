@@ -106,26 +106,32 @@ stay stable until the async slice lands.
 Documents still described LMLP as if it had a wire framing and version
 negotiation, although the current transport already passes typed Dart values
 through isolate ports. The maintainer stated: "Taglia il wire protocol LMLP".
-Status: tracked in S9. Evidence: R40 and ADR-0016 record the pure Dart engine
+Status: addressed. Evidence: R40 and ADR-0016 record the pure Dart engine
 contract, `docs/lmlp-protocol.md` is replaced by `docs/engine-contract.md`,
-and ADR-0003 marks its wire language as superseded. Code cleanup follows in
-S9.
+and ADR-0003 marks its wire language as superseded. `protocol` now exposes
+`LmlpEngine` as Dart interfaces, immutable values and streams, and
+`EngineClient` implements it without serialisation, handshake or remote
+framing.
 
 ## P12 — Raw messages in SQLite
 
 The active storage path still offers a compressed SQLite blob backend, and the
 schema includes a `blobs` table. The maintainer stated: "Non salvare i blob
-.eml dentro il file SQLite". Status: tracked in S9. Evidence: R42 and
-ADR-0017 settle the filesystem-only layout and require a byte-identical
-migration before an old row is removed.
+.eml dentro il file SQLite". Status: addressed. Evidence: R42 and ADR-0017
+settle the filesystem-only layout, `SqliteBlobStore` and the `BlobBackend`
+selection are removed, and every new raw message is written as a verified gzip
+file under the content-addressed folder. `LegacyBlobMigrator` moves old rows
+byte for byte before dropping the retired table, and a corrupt row leaves that
+table in place for recovery.
 
 ## P13 — Concurrent CLI and GUI access
 
 Two front-ends can open one SQLite profile at the same time, so a terminal sync
 can meet an open desktop application. The maintainer asked to handle this
-immediately. Status: tracked in S9. Evidence: R44 and ADR-0019 choose WAL with
-a five second busy timeout and leave a shared write lock as a tested fallback.
-No test currently opens two real connections.
+immediately. Status: addressed. Evidence: R44 and ADR-0019 choose WAL with a
+five second busy timeout and leave a shared write lock as a tested fallback.
+Every open applies both pragmas before schema access, and a test starts two
+separate processes that write to one profile without a daemon or lock service.
 
 ## P14 — No credential-free GUI reading of the Git list
 
@@ -142,8 +148,10 @@ User-visible strings are scattered in Dart, the schema is inline in Dart, and
 protocol delimiters appear as raw literals. The maintainer stated: "tutto
 pulitissimo, tutto in yml" and "db in file .sql a parte". Status: tracked in
 S9 and S11. Evidence: R47 records the conventions and the clean-code, l10n and
-data-separation skills are updated. Q8 remains open for literals that are not
-user-visible text.
+data-separation skills are updated. The SQLite schema now lives in
+`packages/engine/schema.sql`, SQLite settings and text tokens are named values,
+and declarative fixtures live under `data/`. User-visible text still needs
+Fluent resources in S11, and Q8 remains open for other literals.
 
 ## P16 — Missing import, export and automatic transfer
 
@@ -155,10 +163,11 @@ the requirement and Q10 records the open format and trigger decision.
 
 `JwzThreadBuilder`, `QuoteAndDiffAnalyzer`, `packages/app` and `packages/l10n`
 do not exist in the rebuilt tree. Earlier versions survive only in the local
-backup. Status: tracked in S14. Evidence: Q13 is closed in favour of restoring and
-adapting the tested algorithms, and the roadmap assigns the work before the
-S10 thread display and the S11 GUI. The preserved sources and their tests stay
-in the local backup until the adapted files land in `packages/core`.
+backup. Status: tracked in S11. Evidence: Q13 is closed in favour of restoring
+and adapting the tested algorithms. `JwzThreadBuilder` and
+`QuoteAndDiffAnalyzer` now live in `packages/core` with adapted tests, so the
+remaining scope of this problem is the `app` and `l10n` packages assigned to
+S11.
 
 ## P18 — Project discoverability
 

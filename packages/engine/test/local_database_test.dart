@@ -86,8 +86,14 @@ void main() {
 
     final digest = store.put('original bytes'.codeUnits);
     expect(store.verify(digest), isTrue);
-    File('${directory.path}${Platform.pathSeparator}$digest')
-        .writeAsStringSync('corrupted bytes');
+    final levelLength = LocalBlobStore.directoryLevelLength;
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}'
+      '${digest.substring(0, levelLength)}${Platform.pathSeparator}'
+      '${digest.substring(levelLength, levelLength * 2)}'
+      '${Platform.pathSeparator}$digest${LocalBlobStore.fileExtension}',
+    );
+    file.writeAsStringSync('corrupted bytes');
     expect(store.verify(digest), isFalse);
   });
 }

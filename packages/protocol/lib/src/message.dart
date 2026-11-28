@@ -90,18 +90,6 @@ final class ShutdownRequest extends LmlpRequest {
   const ShutdownRequest(super.id);
 }
 
-/// Local backend that holds raw message content.
-///
-/// ADR-0006 allows an equivalent folder and SQLite implementation. The
-/// folder is the default so an existing profile keeps its current layout.
-enum BlobBackend {
-  /// Content-addressed files named by SHA-256 digest.
-  folder,
-
-  /// Zstd-compressed rows in the profile database.
-  sqlite,
-}
-
 /// Local mailbox format accepted by the import verb.
 enum MailImportFormat {
   /// A folder with `cur` and `new` message files.
@@ -133,23 +121,15 @@ enum TriageState {
 final class OpenProfileRequest extends LmlpRequest {
   /// Creates a request for the database at [databasePath].
   ///
-  /// The optional [blobsDirectory] overrides the sibling folder used by the
-  /// folder backend. Front-ends never handle message bytes themselves.
-  const OpenProfileRequest(
-    super.id,
-    this.databasePath, {
-    this.blobsDirectory,
-    this.blobBackend = BlobBackend.folder,
-  });
+  /// The optional [blobsDirectory] overrides the sibling content-addressed
+  /// folder. Front-ends never handle message bytes themselves.
+  const OpenProfileRequest(super.id, this.databasePath, {this.blobsDirectory});
 
   /// Path of the SQLite database to open.
   final String databasePath;
 
   /// Optional folder for raw message content.
   final String? blobsDirectory;
-
-  /// Backend selected for raw message content.
-  final BlobBackend blobBackend;
 }
 
 /// Refreshes one catalogue channel using its declared Mode C protocol.
