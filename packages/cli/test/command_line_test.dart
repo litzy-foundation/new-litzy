@@ -49,6 +49,25 @@ void main() {
     expect((thread.command as ThreadCommand).rootId, 'm1@example.invalid');
   });
 
+  test('audit reads a snapshot from a file', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'audit',
+      '--snapshot',
+      'inbox.json',
+    ]);
+
+    expect((parsed.command as AuditCommand).snapshotPath, 'inbox.json');
+  });
+
+  test('audit requires a snapshot path', () {
+    expect(
+      () => parseCommandLine(['--database', 'p.db', 'audit']),
+      throwsA(isA<CliUsageException>()),
+    );
+  });
+
   test('the SQLite blob backend is selected by an option', () {
     final parsed = parseCommandLine([
       '--database',

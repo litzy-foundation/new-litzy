@@ -107,8 +107,8 @@ Tests drive the real isolate path with local fake servers and check that an
 untrusted list identifier leaves no persisted message. Incremental cursors now
 live in SQLite per channel: NNTP advances by article number and public-inbox
 remembers seen thread identifiers, so a repeated sync fetches no duplicate
-messages. A cursor advances only after its batch commits. Still to do: the
-`audit` verb for residual list mail.
+messages. A cursor advances only after its batch commits. The `audit` verb
+for residual list mail is tracked in S4.
 
 ## S4 — Mode B with opt-in purge
 
@@ -125,9 +125,11 @@ policy through a small `MailboxPort`. The default moves to
 `Litzy/Ingested`; the other safe choice marks messages as seen, and real
 expunging requires an explicit per-list opt-in. A consumed preparation cannot
 be replayed and a mailbox failure leaves it retryable. Tests cover all of
-these paths with a fake mailbox. Still to do: the real RFC-compliant IMAP
-client behind `MailboxPort`, and the `audit` verb that reports residual list
-mail.
+these paths with a fake mailbox. A read-only typed `audit` verb now reports
+residual list mail, unmanaged lists and quarantined messages from a snapshot
+supplied by the front-end; the engine applies the stored policy and never
+changes a mailbox. Still to do: the real RFC-compliant IMAP client behind
+`MailboxPort` that supplies that snapshot.
 
 ## S4a — Secure configuration and OAuth
 
@@ -155,12 +157,13 @@ read, reply and audit. Acceptance tests use the real binary and the real
 database.
 
 Partially landed: the `litzy` binary parses arguments, opens a profile and
-sends typed ping, sync, search and thread requests through a real engine
+sends typed ping, sync, search, thread and audit requests through a real engine
 isolate. Each invocation prints structured JSON and closes its isolate, so no
 engine state survives between processes. Acceptance tests drive the binary
 with a local NNTP fixture and check that a channel synced in one process can
-be searched and read in the next. Still to do: triage, reply, audit and the
-local import commands.
+be searched and read in the next. The audit command reads a typed snapshot
+from a local file and prints the engine's verdict. Still to do: triage, reply
+and the local import commands.
 
 ## S6 — Flutter GUI
 

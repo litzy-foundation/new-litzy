@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:engine/engine.dart';
 import 'package:test/test.dart';
 
 Directory _litzyRoot() {
@@ -205,6 +206,46 @@ sources:
 
     expect(result.exitCode, 1);
     expect(result.stderr as String, contains('sync_failed'));
+  });
+
+  test('audit reports residual mail from a typed snapshot', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final setup = LocalDatabase.open(harness.database);
+    setup.setListPolicy('git@vger.kernel.org', 'move_to_ingested');
+    setup.close();
+    final snapshot = File(
+      '${harness.directory.path}${Platform.pathSeparator}inbox.json',
+    );
+    snapshot.writeAsStringSync('''
+[
+  {"uid": "1", "messageId": "r@example.invalid", "listId": "git@vger.kernel.org"},
+  {"uid": "2", "messageId": "u@example.invalid", "listId": "other@example.invalid"}
+]
+''');
+
+    final result = await harness.run(['audit', '--snapshot', snapshot.path]);
+
+    expect(result.exitCode, 0);
+    expect(_jsonObject(result.stdout), {
+      'residual': ['1'],
+      'unmanaged': ['2'],
+      'quarantined': <Object?>[],
+    });
+  });
+
+  test('a malformed snapshot exits with a stable code', () async {
+    final harness = _Harness(root);
+    addTearDown(harness.close);
+    final snapshot = File(
+      '${harness.directory.path}${Platform.pathSeparator}inbox.json',
+    );
+    snapshot.writeAsStringSync('not json');
+
+    final result = await harness.run(['audit', '--snapshot', snapshot.path]);
+
+    expect(result.exitCode, 1);
+    expect(result.stderr as String, contains('invalid_snapshot'));
   });
 
   test('an invalid command exits with a usage code', () async {

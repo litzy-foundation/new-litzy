@@ -39,5 +39,12 @@ The first implementation keeps policies and preparations in the local SQLite
 database, uses `MailboxPort` as the boundary to a mailbox, and quarantines
 doubtful messages in a durable ledger. A SHA-256 digest binds the accepted
 candidates to a preparation; the second phase recomputes it and rechecks the
-stored bytes before any mailbox action. A real IMAP client and the `audit`
-verb remain to be added behind the same boundary.
+stored bytes before any mailbox action. A real IMAP client remains to be
+added behind the same boundary.
+
+The audit verb is now typed and read-only. It accepts a snapshot of inbox
+messages gathered by the front-end's mailbox reader and lets the engine apply
+the stored per-list policy and quarantine ledger, so no front-end decides
+what counts as residual list mail. The verb never moves, marks or deletes a
+message. When the real IMAP client lands behind `MailboxPort`, it will fill
+the same snapshot without changing the verb or its response.

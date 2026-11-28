@@ -5,6 +5,7 @@ import 'package:engine/engine.dart';
 import 'package:protocol/protocol.dart';
 
 import 'command_line.dart';
+import 'snapshot.dart';
 
 /// The process-level result of one CLI invocation.
 final class CliResult {
@@ -26,6 +27,12 @@ final class CliResult {
 /// Every invocation opens the local profile and closes the isolate, so the
 /// CLI holds no engine state between processes.
 Future<CliResult> runCommand(ParsedCliCommand parsed) async {
+  final LmlpRequest request;
+  try {
+    request = await _requestOf(parsed);
+  } on SnapshotException catch (error) {
+    return CliResult(exitCode: 1, error: '$error');
+  }
   final client = await EngineClient.start();
   try {
     if (parsed.command is! PingCommand) {
@@ -41,13 +48,13 @@ Future<CliResult> runCommand(ParsedCliCommand parsed) async {
         return CliResult(exitCode: 1, error: '$code: $message');
       }
     }
-    return _format(await client.sendRequest(_requestOf(parsed)));
+    return _format(await client.sendRequest(request));
   } finally {
     await client.close();
   }
 }
 
-LmlpRequest _requestOf(ParsedCliCommand parsed) {
+Future<LmlpRequest> _requestOf(ParsedCliCommand parsed) async {
   final id = 'command';
   return switch (parsed.command) {
     PingCommand() => PingRequest(id),
@@ -58,6 +65,10 @@ LmlpRequest _requestOf(ParsedCliCommand parsed) {
     ),
     SearchCommand(:final terms) => SearchRequest(id, terms),
     ThreadCommand(:final rootId) => ThreadRequest(id, rootId),
+    AuditCommand(:final snapshotPath) => AuditRequest(
+      id,
+      readInboxSnapshot(snapshotPath),
+    ),
   };
 }
 
@@ -90,6 +101,15 @@ CliResult _format(LmlpResponse response) => switch (response) {
           .toList(),
     }),
   ),
+  AuditResponse(:final residual, :final unmanaged, :final quarantined) =>
+    CliResult(
+      exitCode: 0,
+      output: jsonEncode({
+        'residual': residual,
+        'unmanaged': unmanaged,
+        'quarantined': quarantined,
+      }),
+    ),
   ErrorResponse(:final code, :final message) => CliResult(
     exitCode: 1,
     error: '$code: $message',
