@@ -8,3 +8,4 @@ library;
 
 export 'src/command_line.dart';
 export 'src/command_runner.dart';
+export 'src/snapshot.dart';

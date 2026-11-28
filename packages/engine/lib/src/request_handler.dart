@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:protocol/protocol.dart';
 
+import 'ingestion/audit_service.dart';
 import 'ingestion/mode_c_sync_service.dart';
 import 'storage/blob_store.dart';
 import 'storage/local_blob_store.dart';
@@ -36,6 +37,8 @@ final class EngineRequestHandler {
         return _search(request);
       case ThreadRequest():
         return _thread(request);
+      case AuditRequest():
+        return _audit(request);
     }
   }
 
@@ -165,6 +168,26 @@ final class EngineRequestHandler {
         request.id,
         'thread_failed',
         'the thread could not be read',
+      );
+    }
+  }
+
+  LmlpResponse _audit(AuditRequest request) {
+    final database = _database;
+    if (database == null) return _notOpen(request.id);
+    try {
+      final report = AuditService(database: database).inspect(request.messages);
+      return AuditResponse(
+        request.id,
+        report.residual.map((message) => message.uid).toList(),
+        report.unmanaged.map((message) => message.uid).toList(),
+        report.quarantined.map((message) => message.uid).toList(),
+      );
+    } catch (_) {
+      return ErrorResponse(
+        request.id,
+        'audit_failed',
+        'the inbox snapshot could not be audited',
       );
     }
   }

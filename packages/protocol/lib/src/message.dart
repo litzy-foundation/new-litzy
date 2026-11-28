@@ -50,6 +50,25 @@ final class MessageData {
   final String checksum;
 }
 
+/// One message in the front-end's snapshot of an inbox.
+///
+/// The front-end reads flags and headers from a mailbox; the engine decides
+/// which messages count as residual list mail under the stored policy. A
+/// message without a list identifier is personal mail and is not audited.
+final class InboxMessage {
+  /// Creates a snapshot entry with its mailbox and message identifiers.
+  const InboxMessage({required this.uid, required this.messageId, this.listId});
+
+  /// Mailbox unique identifier used by the front-end.
+  final String uid;
+
+  /// Stable identifier of the message.
+  final String messageId;
+
+  /// List identifier declared by the message headers, if any.
+  final String? listId;
+}
+
 /// A typed instruction sent by a front-end to the engine.
 sealed class LmlpRequest extends LmlpMessage {
   /// Creates a request with the identifier used to match its response.
@@ -148,6 +167,15 @@ final class ThreadRequest extends LmlpRequest {
   final String rootId;
 }
 
+/// Asks the engine to audit a read-only snapshot of inbox messages.
+final class AuditRequest extends LmlpRequest {
+  /// Creates an audit request for [messages].
+  const AuditRequest(super.id, this.messages);
+
+  /// Snapshot gathered by the front-end's mailbox reader.
+  final List<InboxMessage> messages;
+}
+
 /// A typed answer sent by the engine for one request identifier.
 sealed class LmlpResponse extends LmlpMessage {
   /// Creates a response for the given request identifier.
@@ -218,6 +246,26 @@ final class ThreadResponse extends LmlpResponse {
 
   /// Messages in pre-order.
   final List<MessageData> messages;
+}
+
+/// Reports the engine's read-only verdict on an inbox snapshot.
+final class AuditResponse extends LmlpResponse {
+  /// Creates an audit response with the classified mailbox identifiers.
+  const AuditResponse(
+    super.id,
+    this.residual,
+    this.unmanaged,
+    this.quarantined,
+  );
+
+  /// Mailbox identifiers that remain under an active list policy.
+  final List<String> residual;
+
+  /// Mailbox identifiers from lists without a stored policy.
+  final List<String> unmanaged;
+
+  /// Mailbox identifiers held deliberately in the quarantine ledger.
+  final List<String> quarantined;
 }
 
 /// A typed notification pushed by the engine without a request.

@@ -55,6 +55,15 @@ final class ThreadCommand extends CliCommand {
   final String rootId;
 }
 
+/// Audits a snapshot of inbox messages without changing a mailbox.
+final class AuditCommand extends CliCommand {
+  /// Creates an audit command reading [snapshotPath].
+  const AuditCommand(this.snapshotPath);
+
+  /// Path of the JSON snapshot supplied by a mailbox reader.
+  final String snapshotPath;
+}
+
 /// A parsed invocation with its profile location and requested operation.
 final class ParsedCliCommand {
   /// Creates a parsed command with optional local paths.
@@ -155,6 +164,20 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
         blobsDirectory: blobs,
         blobBackend: backend,
         command: ThreadCommand(argument),
+      );
+    case 'audit':
+      final snapshot = options['snapshot'];
+      if (snapshot == null || snapshot.isEmpty) {
+        throw const CliUsageException('audit needs --snapshot');
+      }
+      if (argument != null) {
+        throw const CliUsageException('audit takes no argument');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        blobBackend: backend,
+        command: AuditCommand(snapshot),
       );
     default:
       throw CliUsageException('unknown command $name');
