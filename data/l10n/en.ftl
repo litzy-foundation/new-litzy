@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# User-visible messages for the read-only Litzy client.
+
+app-title = Litzy
+channels-title = Channels
+topics-title = Topics
+conversation-title = Conversation
+own-threads = Own threads
+unread-mail = Unread mail
+awaiting-reply = Awaiting reply
+all-topics = All topics
+no-channels = No channels are available yet.
+no-topics = No topics are available yet.
+no-conversation = Select a topic to read its conversation.
+patch-badge = Patch
+topic-count = This topic contains { $count } messages.
+quoted-context = Quoted context at level { $level }.
+diff-summary = This patch contains { $count } hunks.
+composer-preview = To { $to }, Cc { $cc }.
+none = none
+back-action = Back
+loading = Loading the local profile.
+error-profile-not-open = The local profile is not open.
+error-profile-open-failed = The local profile could not be opened.
+error-channel-list-failed = The channels could not be read.
+error-thread-list-failed = The topics could not be read.
+error-thread-failed = The conversation could not be read.
+error-transport-timeout = The local engine did not answer in time.
+error-transport-closed = The local engine is no longer available.
+error-unexpected-failure = The request could not be completed.
+error-unknown = The request failed.
+empty-view = This view has no topics yet.

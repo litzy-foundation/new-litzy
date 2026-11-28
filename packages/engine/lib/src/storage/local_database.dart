@@ -8,7 +8,8 @@ import 'package:sqlite3/sqlite3.dart';
 import 'channel_record.dart';
 import 'message_record.dart';
 import 'schema_file.dart';
-import 'sqlite_settings.dart';
+import 'sql_keys.dart';
+import 'sql_resources.dart';
 import 'sync_cursor.dart';
 
 /// A row from the retired compressed blob table.
@@ -24,21 +25,23 @@ typedef StoredDraft = ({String messageId, String subject, String body});
 
 /// The local SQLite store for messages, threads and full-text search.
 ///
-/// ADR-0005 chooses recursive queries and FTS5, and ADR-0002 makes this the
-/// only active backend. Every write is a transaction so a purge decision is
-/// never based on a half-persisted message.
+/// ADR-0005 chooses recursive queries and FTS5, ADR-0002 makes this the only
+/// active backend, and R51 keeps every statement in a standalone `.sql`
+/// resource. Every write is a transaction so a purge decision is never based
+/// on a half-persisted message.
 final class LocalDatabase {
   LocalDatabase._(this._database) {
-    _database.execute(
-      'PRAGMA ${SqliteSettings.journalModePragma}='
-      '${SqliteSettings.journalMode}',
-    );
-    _database.execute(
-      'PRAGMA ${SqliteSettings.busyTimeoutPragma}='
-      '${SqliteSettings.busyTimeoutMilliseconds}',
-    );
+    _database.execute(SqlResources.statement(SqlKeys.setJournalMode));
+    _database.execute(SqlResources.statement(SqlKeys.setBusyTimeout));
     _migrate();
   }
+
+  /// Column additions that bring an older profile to the current schema.
+  static const List<({String name, String statement})> _migrations = [
+    (name: 'quarantined', statement: SqlKeys.addQuarantinedColumn),
+    (name: 'is_read', statement: SqlKeys.addIsReadColumn),
+    (name: 'starred', statement: SqlKeys.addStarredColumn),
+  ];
 
   final Database _database;
 
@@ -51,13 +54,17 @@ final class LocalDatabase {
 
   /// Journal mode reported by the open connection.
   String get journalMode {
-    final rows = _database.select('PRAGMA ${SqliteSettings.journalModePragma}');
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.readJournalMode),
+    );
     return rows.single.values.first as String;
   }
 
   /// Busy timeout reported by the open connection.
   int get busyTimeoutMilliseconds {
-    final rows = _database.select('PRAGMA ${SqliteSettings.busyTimeoutPragma}');
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.readBusyTimeout),
+    );
     return rows.single.values.first as int;
   }
 
@@ -66,31 +73,26 @@ final class LocalDatabase {
       _database.execute(statement);
     }
     final columns = _database
-        .select('PRAGMA table_info(messages)')
+        .select(SqlResources.statement(SqlKeys.messagesTableInfo))
         .map((row) => row['name'] as String)
         .toSet();
-    for (final column in const ['quarantined', 'is_read', 'starred']) {
-      if (!columns.contains(column)) {
-        _database.execute(
-          'ALTER TABLE messages ADD COLUMN $column INTEGER NOT NULL DEFAULT 0',
-        );
+    for (final migration in _migrations) {
+      if (!columns.contains(migration.name)) {
+        _database.execute(SqlResources.statement(migration.statement));
       }
     }
   }
 
   /// Persists a batch of messages atomically.
   void insertMessages(List<MessageRecord> records) {
-    _database.execute('BEGIN IMMEDIATE');
+    _database.execute(SqlResources.statement(SqlKeys.beginImmediate));
     try {
-      final insert = _database.prepare('''
-        INSERT INTO messages
-          (id, list_id, subject, from_address, date_epoch, parent_id,
-           thread_root_id, body, checksum)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''');
-      final search = _database.prepare('''
-        INSERT INTO messages_fts (id, subject, body) VALUES (?, ?, ?)
-      ''');
+      final insert = _database.prepare(
+        SqlResources.statement(SqlKeys.insertMessage),
+      );
+      final search = _database.prepare(
+        SqlResources.statement(SqlKeys.insertMessageFts),
+      );
       for (final record in records) {
         insert.execute([
           record.id,
@@ -107,45 +109,36 @@ final class LocalDatabase {
       }
       insert.dispose();
       search.dispose();
-      _database.execute('COMMIT');
+      _database.execute(SqlResources.statement(SqlKeys.commit));
     } catch (_) {
-      _database.execute('ROLLBACK');
+      _database.execute(SqlResources.statement(SqlKeys.rollback));
       rethrow;
     }
   }
 
   /// Identifiers of all persisted messages, ordered for stable assertions.
   List<String> get messageIds {
-    final rows = _database.select('SELECT id FROM messages ORDER BY id');
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.selectMessageIds),
+    );
     return rows.map((row) => row['id'] as String).toList();
   }
 
   /// Stores a selected channel, replacing its previous endpoint.
   void upsertChannel(ChannelRecord channel) {
-    _database.execute(
-      '''
-      INSERT INTO channels (id, list_id, label, protocol, endpoint)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        list_id = excluded.list_id,
-        label = excluded.label,
-        protocol = excluded.protocol,
-        endpoint = excluded.endpoint
-      ''',
-      [
-        channel.id,
-        channel.listId,
-        channel.label,
-        channel.protocol,
-        channel.endpoint,
-      ],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.upsertChannel), [
+      channel.id,
+      channel.listId,
+      channel.label,
+      channel.protocol,
+      channel.endpoint,
+    ]);
   }
 
   /// Returns the stored channel with [id], or null when absent.
   ChannelRecord? channelOf(String id) {
     final rows = _database.select(
-      'SELECT id, list_id, label, protocol, endpoint FROM channels WHERE id = ?',
+      SqlResources.statement(SqlKeys.selectChannelById),
       [id],
     );
     if (rows.isEmpty) return null;
@@ -161,9 +154,7 @@ final class LocalDatabase {
 
   /// Returns every persisted channel ordered by its stable identifier.
   List<ChannelRecord> get channels => _database
-      .select(
-        'SELECT id, list_id, label, protocol, endpoint FROM channels ORDER BY id',
-      )
+      .select(SqlResources.statement(SqlKeys.selectChannels))
       .map(
         (row) => ChannelRecord(
           id: row['id'] as String,
@@ -186,23 +177,10 @@ final class LocalDatabase {
     })
   >
   threadSummaries({String? channelId}) => _database
-      .select(
-        '''
-        SELECT m.thread_root_id AS root_id,
-               m.list_id AS list_id,
-               (SELECT subject FROM messages r
-                WHERE r.thread_root_id = m.thread_root_id
-                ORDER BY r.date_epoch, r.id LIMIT 1) AS subject,
-               COUNT(*) AS message_count,
-               MAX(m.date_epoch) AS last_activity_epoch
-        FROM messages m
-        WHERE ? IS NULL OR m.list_id =
-          (SELECT list_id FROM channels WHERE id = ?)
-        GROUP BY m.thread_root_id, m.list_id
-        ORDER BY last_activity_epoch DESC, root_id
-        ''',
-        [channelId, channelId],
-      )
+      .select(SqlResources.statement(SqlKeys.selectThreadSummaries), [
+        channelId,
+        channelId,
+      ])
       .map(
         (row) => (
           rootId: row['root_id'] as String,
@@ -216,7 +194,10 @@ final class LocalDatabase {
 
   /// Returns one persisted message, or null when [id] is absent.
   MessageRecord? messageOf(String id) {
-    final rows = _database.select('SELECT * FROM messages WHERE id = ?', [id]);
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.selectMessageById),
+      [id],
+    );
     if (rows.isEmpty) return null;
     return _toRecord(rows.first);
   }
@@ -229,26 +210,20 @@ final class LocalDatabase {
     String body,
     int createdAt,
   ) {
-    _database.execute(
-      '''
-      INSERT INTO drafts (id, message_id, subject, body, created_at)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        message_id = excluded.message_id,
-        subject = excluded.subject,
-        body = excluded.body,
-        created_at = excluded.created_at
-      ''',
-      [id, messageId, subject, body, createdAt],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.upsertDraft), [
+      id,
+      messageId,
+      subject,
+      body,
+      createdAt,
+    ]);
   }
 
   /// Returns the stored draft with [id], or null when absent.
   StoredDraft? draftOf(String id) {
-    final rows = _database.select(
-      'SELECT message_id, subject, body FROM drafts WHERE id = ?',
-      [id],
-    );
+    final rows = _database.select(SqlResources.statement(SqlKeys.selectDraft), [
+      id,
+    ]);
     if (rows.isEmpty) return null;
     final row = rows.first;
     return (
@@ -261,7 +236,7 @@ final class LocalDatabase {
   /// Returns the verified checksum for [id], or null when absent.
   String? checksumOf(String id) {
     final rows = _database.select(
-      'SELECT checksum FROM messages WHERE id = ?',
+      SqlResources.statement(SqlKeys.selectChecksum),
       [id],
     );
     if (rows.isEmpty) return null;
@@ -270,28 +245,27 @@ final class LocalDatabase {
 
   /// Changes the supplied triage flags of an existing message.
   void setTriage(String id, {bool? read, bool? starred}) {
-    final assignments = <String>[];
-    final values = <Object?>[];
-    if (read != null) {
-      assignments.add('is_read = ?');
-      values.add(read ? 1 : 0);
+    final String key;
+    final List<Object?> values;
+    if (read != null && starred != null) {
+      key = SqlKeys.updateTriageBoth;
+      values = [read ? 1 : 0, starred ? 1 : 0, id];
+    } else if (read != null) {
+      key = SqlKeys.updateTriageRead;
+      values = [read ? 1 : 0, id];
+    } else if (starred != null) {
+      key = SqlKeys.updateTriageStarred;
+      values = [starred ? 1 : 0, id];
+    } else {
+      return;
     }
-    if (starred != null) {
-      assignments.add('starred = ?');
-      values.add(starred ? 1 : 0);
-    }
-    if (assignments.isEmpty) return;
-    values.add(id);
-    _database.execute(
-      'UPDATE messages SET ${assignments.join(', ')} WHERE id = ?',
-      values,
-    );
+    _database.execute(SqlResources.statement(key), values);
   }
 
   /// Returns both triage flags of [id], or null when the message is absent.
   ({bool read, bool starred})? triageOf(String id) {
     final rows = _database.select(
-      'SELECT is_read, starred FROM messages WHERE id = ?',
+      SqlResources.statement(SqlKeys.selectTriage),
       [id],
     );
     if (rows.isEmpty) return null;
@@ -309,7 +283,7 @@ final class LocalDatabase {
   List<LegacyBlob> legacyBlobs() {
     if (!hasLegacyBlobs()) return const [];
     return _database
-        .select('SELECT digest, codec, size, payload FROM blobs')
+        .select(SqlResources.statement(SqlKeys.selectLegacyBlobs))
         .map(
           (row) => (
             digest: row['digest'] as String,
@@ -324,30 +298,27 @@ final class LocalDatabase {
   /// Removes the retired blob table after a verified migration.
   void dropLegacyBlobs() {
     if (hasLegacyBlobs()) {
-      _database.execute('DROP TABLE blobs');
+      _database.execute(SqlResources.statement(SqlKeys.dropLegacyBlobs));
     }
   }
 
   Set<String> _tableNames() => _database
-      .select("SELECT name FROM sqlite_master WHERE type = 'table'")
+      .select(SqlResources.statement(SqlKeys.selectTableNames))
       .map((row) => row['name'] as String)
       .toSet();
 
   /// Stores the incremental cursor for [channelId].
   void setCursor(String channelId, SyncCursor cursor) {
-    _database.execute(
-      '''
-      INSERT INTO sync_cursors (channel_id, cursor) VALUES (?, ?)
-      ON CONFLICT(channel_id) DO UPDATE SET cursor = excluded.cursor
-      ''',
-      [channelId, cursor.encode()],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.upsertSyncCursor), [
+      channelId,
+      cursor.encode(),
+    ]);
   }
 
   /// Returns the cursor for [channelId], or null when none was stored.
   SyncCursor? cursorOf(String channelId) {
     final rows = _database.select(
-      'SELECT cursor FROM sync_cursors WHERE channel_id = ?',
+      SqlResources.statement(SqlKeys.selectSyncCursor),
       [channelId],
     );
     if (rows.isEmpty) return null;
@@ -360,20 +331,17 @@ final class LocalDatabase {
     String action, {
     String folder = 'Litzy/Ingested',
   }) {
-    _database.execute(
-      '''
-      INSERT INTO list_policies (list_id, action, folder) VALUES (?, ?, ?)
-      ON CONFLICT(list_id) DO UPDATE SET
-        action = excluded.action, folder = excluded.folder
-      ''',
-      [listId, action, folder],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.upsertListPolicy), [
+      listId,
+      action,
+      folder,
+    ]);
   }
 
   /// Returns the stored policy action for [listId], or null when unset.
   String? rawPolicyOf(String listId) {
     final rows = _database.select(
-      'SELECT action FROM list_policies WHERE list_id = ?',
+      SqlResources.statement(SqlKeys.selectPolicyAction),
       [listId],
     );
     if (rows.isEmpty) return null;
@@ -383,7 +351,7 @@ final class LocalDatabase {
   /// Returns the destination folder for [listId], or null when unset.
   String? policyFolderOf(String listId) {
     final rows = _database.select(
-      'SELECT folder FROM list_policies WHERE list_id = ?',
+      SqlResources.statement(SqlKeys.selectPolicyFolder),
       [listId],
     );
     if (rows.isEmpty) return null;
@@ -394,17 +362,17 @@ final class LocalDatabase {
   ///
   /// A decision identifier is single use, so an existing record is kept.
   void recordPreparation(String id, String listId, String digest) {
-    _database.execute(
-      '''INSERT OR IGNORE INTO purge_preparations
-         (id, list_id, digest) VALUES (?, ?, ?)''',
-      [id, listId, digest],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.insertPurgePreparation), [
+      id,
+      listId,
+      digest,
+    ]);
   }
 
   /// Returns the recorded digest for [id], or null when absent.
   String? preparationDigestOf(String id) {
     final rows = _database.select(
-      'SELECT digest FROM purge_preparations WHERE id = ?',
+      SqlResources.statement(SqlKeys.selectPreparationDigest),
       [id],
     );
     if (rows.isEmpty) return null;
@@ -414,7 +382,7 @@ final class LocalDatabase {
   /// Whether the preparation for [id] has already been consumed.
   bool isPreparationConsumed(String id) {
     final rows = _database.select(
-      'SELECT consumed FROM purge_preparations WHERE id = ?',
+      SqlResources.statement(SqlKeys.selectPreparationConsumed),
       [id],
     );
     if (rows.isEmpty) return false;
@@ -423,10 +391,7 @@ final class LocalDatabase {
 
   /// Marks the preparation for [id] consumed after a successful action.
   void consumePreparation(String id) {
-    _database.execute(
-      'UPDATE purge_preparations SET consumed = 1 WHERE id = ?',
-      [id],
-    );
+    _database.execute(SqlResources.statement(SqlKeys.consumePreparation), [id]);
   }
 
   /// Records doubtful messages in the quarantine ledger.
@@ -436,14 +401,13 @@ final class LocalDatabase {
   void quarantine(List<String> ids) {
     if (ids.isEmpty) return;
     final now = DateTime.now().millisecondsSinceEpoch;
-    _database.execute('BEGIN IMMEDIATE');
+    _database.execute(SqlResources.statement(SqlKeys.beginImmediate));
     try {
       final update = _database.prepare(
-        'UPDATE messages SET quarantined = 1 WHERE id = ?',
+        SqlResources.statement(SqlKeys.quarantineMessage),
       );
       final insert = _database.prepare(
-        '''INSERT OR IGNORE INTO quarantine_entries
-           (message_id, quarantined_at) VALUES (?, ?)''',
+        SqlResources.statement(SqlKeys.insertQuarantineEntry),
       );
       for (final id in ids) {
         update.execute([id]);
@@ -451,9 +415,9 @@ final class LocalDatabase {
       }
       update.dispose();
       insert.dispose();
-      _database.execute('COMMIT');
+      _database.execute(SqlResources.statement(SqlKeys.commit));
     } catch (_) {
-      _database.execute('ROLLBACK');
+      _database.execute(SqlResources.statement(SqlKeys.rollback));
       rethrow;
     }
   }
@@ -461,7 +425,7 @@ final class LocalDatabase {
   /// Identifiers recorded in the quarantine ledger.
   List<String> get quarantinedIds {
     final rows = _database.select(
-      'SELECT message_id FROM quarantine_entries ORDER BY message_id',
+      SqlResources.statement(SqlKeys.selectQuarantinedIds),
     );
     return rows.map((row) => row['message_id'] as String).toList();
   }
@@ -469,19 +433,7 @@ final class LocalDatabase {
   /// Reads a whole thread in pre-order with a bounded recursive query.
   List<MessageRecord> subtree(String rootId, {int maxDepth = 64}) {
     final rows = _database.select(
-      '''
-      WITH RECURSIVE subtree (id, depth) AS (
-        SELECT id, 0 FROM messages WHERE id = ?
-        UNION ALL
-        SELECT m.id, s.depth + 1
-        FROM messages m
-        JOIN subtree s ON m.parent_id = s.id
-        WHERE s.depth < ?
-      )
-      SELECT m.* FROM messages m
-      JOIN subtree s ON m.id = s.id
-      ORDER BY s.depth, m.date_epoch
-    ''',
+      SqlResources.statement(SqlKeys.selectSubtree),
       [rootId, maxDepth],
     );
     return rows.map(_toRecord).toList();
@@ -490,7 +442,7 @@ final class LocalDatabase {
   /// Searches subjects and bodies through FTS5.
   List<String> search(String terms) {
     final rows = _database.select(
-      'SELECT id FROM messages_fts WHERE messages_fts MATCH ?',
+      SqlResources.statement(SqlKeys.searchMessages),
       [terms],
     );
     return rows.map((row) => row['id'] as String).toList();
@@ -498,15 +450,15 @@ final class LocalDatabase {
 
   /// Number of persisted messages.
   int get count {
-    final rows = _database.select('SELECT COUNT(*) AS total FROM messages');
+    final rows = _database.select(
+      SqlResources.statement(SqlKeys.countMessages),
+    );
     return (rows.first['total'] as int?) ?? 0;
   }
 
   /// Writes a copy of the database to [destination] for a durable backup.
   void backupTo(File destination) {
-    _database.execute(
-      "VACUUM INTO '${destination.path.replaceAll("'", "''")}'",
-    );
+    _database.execute(SqlResources.vacuumInto(destination.path));
   }
 
   /// Closes the database handle.

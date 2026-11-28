@@ -131,6 +131,11 @@ versioned file or a `.env` file.
     rules, never bypassing the verification gate.
 43. Discoverability (R49): one accurate public description and a small set of
     truthful tags for the local-first mailing list reader.
+44. Agent-tested binaries (R50): the agent runs a real acceptance test on every
+    binary it builds or changes, including the compiled GUI client. Widget and
+    engine-backed tests alone do not close a binary slice.
+45. SQL resources (R51): SQL lives only in standalone `.sql` files loaded by
+    key, never embedded in Dart source.
 
 ## Fixed operational rules
 

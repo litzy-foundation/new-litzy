@@ -445,7 +445,8 @@ monospace with clear colour, selection can be quoted into the composer, and
 sending uses Ctrl+Enter with a visible To and Cc preview rather than a bare
 Enter. The maintainer added "conferme a non finire poi": the interface must
 be defined once and then implemented, without repeated confirmation loops.
-The decision is in ADR-0020.
+The decision is in ADR-0020 and its first read-only implementation is recorded
+in ADR-0022.
 
 ## R47 — Clean local code conventions
 
@@ -487,6 +488,28 @@ then applied to the GitHub repository description and topics, which closes
 Q11 and is tracked in S13. Claims must match implemented behaviour; a
 planned feature is never advertised as present.
 
+## R50 — The agent tests every binary
+
+The maintainer stated: "anche il client binary va testato da te ; i binary
+vanno testati da te". Every binary the agent builds or changes must be
+exercised by the agent in a real acceptance run before the slice is called
+done. This includes the compiled GUI client and not only in-process engines,
+widget trees and unit tests. R27 defines the acceptance standard; this
+requirement makes the agent responsible for carrying it out for every binary
+it ships. ADR-0023 records the boundary, S14 tracks the GUI binary harness,
+and P20 stays in the problem register until the agent has evidence of
+closure.
+
+## R51 — SQL lives only in standalone files
+
+The maintainer restated: "sql va in file sql autonomo , non nel codice". All
+SQL statements and schema definitions live in standalone `.sql` resources
+that the code loads by a named key. No SQL text is embedded in Dart source.
+This sharpens R47 without weakening its other conventions, and it applies to
+schema, queries, pragmas and reusable fragments alike. ADR-0024 records the
+loading boundary, S14 tracks the audit and any extraction, and P15 remains
+open until the audit has evidence of closure.
+
 ## Open questions
 
 | # | Question | Status |
@@ -503,7 +526,7 @@ planned feature is never advertised as present.
 | Q10 | Which formats and triggers do import, export, autoimport and autoexport use in the first slice? | Closed by R48: mbox and Maildir import, mbox export, YAML rules triggered after sync |
 | Q11 | Where are the public description and discoverability tags published? | Closed by R49: versioned YAML, README and GitHub repository metadata in S13 |
 | Q12 | Is WAL with a five second busy timeout enough, or is a shared write lock needed from the first two-front-end test? | Closed by S9: two real processes write to one profile with WAL and a five second busy timeout, so no shared lock is added |
-| Q13 | Should the thread builder and quote or diff analyzer be restored from the preserved backup or reimplemented against the current engine contract? | Closed: restore and adapt the preserved algorithms in S14, because their tests cover hostile reference chains and real patch bodies |
+| Q13 | Should the thread builder and quote or diff analyzer be restored from the preserved backup or reimplemented against the current engine contract? | Closed: restore and adapt the preserved algorithms in S11, because their tests cover hostile reference chains and real patch bodies |
 
 Decisions recorded in this cycle close the questions about front-end order,
 transfer formats, publication place, algorithm provenance and SQLite

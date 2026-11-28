@@ -138,23 +138,38 @@ separate processes that write to one profile without a daemon or lock service.
 The engine and CLI already read public lists from local fixtures, but there is
 no GUI package and no direct daily path for `git@vger.kernel.org`. The
 maintainer asked to read that list from both CLI and GUI without credentials.
-Status: partially addressed in S10, with the GUI still tracked in S11.
-Evidence: R45 records the goal, ADR-0021 fixes the reading path, the engine
-resolves default values from `data/catalog/default.yaml`, and the CLI exposes
-`channels`, `list` and `show`. Acceptance tests drive the real binary against
-local NNTP and public-inbox fixtures without a credential. The GUI remains
-unbuilt until S11.
+Status: addressed in S11. Evidence: R45 records the goal, ADR-0021 fixes the
+reading path and ADR-0022 defines the read-only GUI. The engine resolves
+default values from `data/catalog/default.yaml`, the CLI exposes `channels`,
+`list` and `show`, and `packages/app` reads the same profile through typed
+verbs and a local isolate. The database path resolves inside the platform
+application support directory, so the same client works on desktop and mobile.
+Widget tests drive channel, topic and conversation navigation from the recorded
+Git thread, and an engine-backed test opens a real isolate and SQLite database
+without a credential.
 
 ## P15 — Hardcoded literals and inline schema
 
 User-visible strings are scattered in Dart, the schema is inline in Dart, and
 protocol delimiters appear as raw literals. The maintainer stated: "tutto
-pulitissimo, tutto in yml" and "db in file .sql a parte". Status: tracked in
-S9 and S11. Evidence: R47 records the conventions and the clean-code, l10n and
-data-separation skills are updated. The SQLite schema now lives in
+pulitissimo, tutto in yml" and "db in file .sql a parte". Status: partially
+addressed. Evidence: R47 records the conventions and the clean-code, l10n and
+data-separation skills are updated. The SQLite schema lives in
 `packages/engine/schema.sql`, SQLite settings and text tokens are named values,
-and declarative fixtures live under `data/`. User-visible text still needs
-Fluent resources in S11, and Q8 remains open for other literals.
+and declarative fixtures live under `data/`. S11 adds Fluent resources under
+`data/l10n` with typed keys, YAML configuration under `data/ui` and
+`data/app`, and a test that rejects literal text in widget constructors and
+label properties. The maintainer restated: "sql va in file sql autonomo , non
+nel codice". R51 sharpens R47. Status: the SQL part is addressed, while the
+general literal question stays open. Evidence: every statement, pragma,
+migration and query now lives under `packages/engine/sql` or in
+`packages/engine/schema.sql`, and Dart code selects each one through
+`SqlKeys` and `SqlResources`. Test setup statements moved out of Dart as well.
+`packages/engine/test/sql_resources_test.dart` reads its detection patterns
+from `data/quality/sql_guard.yaml` and scans every Dart source outside
+generated folders, so an inline statement fails the suite. Q8 remains open
+because a deliberate choice is still needed for other literals beyond
+user-visible text and SQL.
 
 ## P16 — Missing import, export and automatic transfer
 
@@ -166,14 +181,45 @@ the requirement and Q10 records the open format and trigger decision.
 
 `JwzThreadBuilder`, `QuoteAndDiffAnalyzer`, `packages/app` and `packages/l10n`
 do not exist in the rebuilt tree. Earlier versions survive only in the local
-backup. Status: tracked in S11. Evidence: Q13 is closed in favour of restoring
+backup. Status: addressed in S11. Evidence: Q13 is closed in favour of restoring
 and adapting the tested algorithms. `JwzThreadBuilder` and
-`QuoteAndDiffAnalyzer` now live in `packages/core` with adapted tests, so the
-remaining scope of this problem is the `app` and `l10n` packages assigned to
-S11.
+`QuoteAndDiffAnalyzer` now live in `packages/core` with adapted tests. S11 adds
+`packages/l10n` for Fluent resources and `packages/app` for the adaptive
+Flutter client, so this problem is addressed.
 
 ## P18 — Project discoverability
 
 The repository has no agreed public description or discovery tags for the
 local-first mailing list reader. Status: tracked in S13. Evidence: R49 records
 the maintainer's goal and Q11 records the publication place as open.
+
+## P19 — Flutter toolchain versus the workspace SDK floor
+
+The installed Flutter 3.38.2 bundled Dart 3.10.0 and could not resolve a
+workspace requiring Dart 3.14 or newer. Flutter 3.50.0 and 3.50.1 bundle Dart
+3.14.0, which was below the earlier workspace floor of 3.14.1. Status:
+addressed. Evidence: mise pins Flutter 3.50.1, every package declares
+`sdk: ^3.14.0`, and the Dart-only toolchain remains pinned to 3.14.1, which
+satisfies the shared constraint. The `test` dependency is limited to versions
+below 1.33.0 because Flutter 3.50.1 pins `test_api` 0.7.14 while `test` 1.33.0
+requires 0.7.15. Flutter 3.50 also moves Material widgets into `material_ui`,
+so the client declares that package and uses a theme without animated ink in
+headless tests. Melos analysis is split into Dart and Flutter steps because the
+Dart analyzer cannot resolve packages that depend on the Flutter SDK. ADR-0022
+records the decisions, and the Flutter suite uses the pinned toolchain
+through mise.
+
+## P20 — Client binaries were not tested by the agent
+
+The S11 slice ran an engine-backed widget test but did not build or launch the
+compiled GUI binary. The maintainer stated: "anche il client binary va testato
+da te ; i binary vanno testati da te". Status: addressed for Linux and
+unverified for the other targets. Evidence: R50 and ADR-0023 make binary
+acceptance an agent responsibility. `mise exec -- flutter pub run melos run
+test:binary` builds the Linux GUI with `flutter build linux --debug`, compiles
+the CLI with `dart build cli`, then launches both binaries against temporary
+SQLite profiles seeded from `data/fixtures/git_public_inbox_thread.mbox`. The
+GUI run asserts the machine-readable `app.ready`, channel and topic markers;
+the CLI run asserts its JSON channel, topic and thread output. Both runs
+passed on 2026-11-28. macOS, Windows, Android and iOS were not built or
+launched on this machine and are not claimed as tested.

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Synthetic message body used by the GUI body rendering tests.
+
+version: 1
+quoted_context: "quoted context"
+prose: "fresh explanation"
+diff_lines:
+  - "diff --git file file"
+  - "@@ -1 +1 @@"
+  - "-old"
+  - "+new"

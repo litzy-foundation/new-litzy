@@ -1,0 +1,31 @@
+name: app
+description: Adaptive Flutter client that reads Litzy lists through the embedded engine.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.0
+dependencies:
+  flutter:
+    sdk: flutter
+  core:
+    path: ../core
+  engine:
+    path: ../engine
+  l10n:
+    path: ../l10n
+  material_ui: ^1.11.1
+  path_provider: ^2.1.5
+  protocol:
+    path: ../protocol
+  yaml: ^3.1.4
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true
+  assets:
+    - data/l10n/en.ftl
+    - data/ui/layout.yaml
+    - data/ui/theme.yaml
+    - data/ui/subject_markers.yaml
+    - data/app/profile.yaml

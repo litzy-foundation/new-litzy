@@ -25,6 +25,8 @@ file for PostgreSQL, MinIO or other services is not part of this repository.
 | `dart run melos run test:core` | Run only the tests of `core` |
 | `dart run melos run test:protocol` | Run only the tests of `protocol` |
 | `dart run melos run test:engine` | Run only the tests of `engine` |
+| `dart run melos run test:binary` | Build and launch the CLI and Linux GUI binaries |
+| `dart run melos run build:gui-linux` | Build the Linux GUI binary used by acceptance |
 | `dart run melos run format` | Format all Dart sources |
 
 ## Test discipline
@@ -34,7 +36,11 @@ The targeted command runs while iterating and the full suite runs before a
 pull request is merged. Acceptance tests start the real binary, engine and
 database as described in ADR-0013. Test databases are created in temporary
 directories, never in the package directory and never in a user's profile.
-No test deletes local user data.
+No test deletes local user data. Binary acceptance lives in `binary_test`
+directories so the normal Dart and Flutter suites do not launch a binary before
+it has been built. SQL statements live in standalone `.sql` resources under
+`packages/engine/sql`, and a guard reads its detection patterns from
+`data/quality/sql_guard.yaml`.
 
 ## Code standards
 

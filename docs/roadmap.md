@@ -241,6 +241,26 @@ is not active until S8, but its To and Cc preview shape is defined now. Tests
 check adaptive layout, thread navigation and that no user-visible string is
 hardcoded.
 
+ADR-0022 fixes the package boundary and the presentation rules before code.
+The client reaches the engine through a `ReadingSource` port implemented by
+`EngineReadingSource`, while widgets receive immutable state from a
+`ReadingController`. Layout, theme and subject markers are declarative YAML
+assets. The slice is landed. `packages/l10n` parses the Fluent resource, and
+`packages/app` renders channels, topics and conversations with localized labels,
+folded citations, monospace diffs and declarative patch prefixes. A test
+rejects literal text in widget constructors and label properties. Widget tests
+cover the desktop and mobile layouts and navigation from a fake source. One
+widget test opens the real engine isolate and SQLite database from the recorded
+Git thread and reads the reconstructed conversation without a credential;
+isolate calls run through `tester.runAsync` because Flutter test scheduling
+otherwise stalls them. Profile paths resolve inside platform support
+directories, and transport, timeout and unknown failures become typed localized
+errors. Formatting is clean,
+Dart and Flutter analysis report no issues, and the full Dart and Flutter suites
+are green. A compiled GUI binary was not built in that slice. S14 now requires
+the agent to build and launch one, so packaged acceptance is tracked rather
+than treated as complete.
+
 ## S12 — Import, export and automatic transfer
 
 Add explicit import and export of profile data plus declarative automatic
@@ -255,6 +275,33 @@ Choose the public description and tags from Q11, then add them to the
 repository and package metadata. The wording describes a local-first mailing
 list reader for technical lists and makes no claim about unimplemented
 features.
+
+## S14 — Agent-tested binaries and standalone SQL
+
+The maintainer required the agent to test every binary and to keep SQL in
+standalone files. Build the Linux GUI client from the pinned Flutter toolchain
+and add an acceptance test that launches the compiled binary against a
+recorded Git fixture and a real SQLite profile in a temporary directory. The
+CLI binary keeps its existing process-level acceptance, and any target that
+cannot be exercised on this machine is recorded as unverified rather than
+claimed as covered. Audit all Dart source for embedded SQL and move any
+statement into a `.sql` resource loaded by key. A test guards the boundary.
+
+Status: done for Linux, with the other targets unverified. Evidence: the root
+Melos script builds the Linux GUI through `tool/linux_toolchain`, whose two
+small wrappers delegate to the system C and C++ compilers because Flutter 3.50
+expects a `clang` beside `clang++`. The CLI is compiled with `dart build cli`
+because `dart compile exe` does not support packages with build hooks. Both
+binaries are launched by tests under `binary_test` directories with temporary
+profiles and the recorded Git mbox fixture. `mise exec -- dart format
+--output=none --set-exit-if-changed .`, `mise exec -- flutter pub run melos run
+analyze`, `mise exec -- flutter pub run melos run test` and `mise exec --
+flutter pub run melos run test:binary` all passed on 2026-11-28. An earlier run
+showed one transient migration test failure; isolated and repeated engine runs
+were green, and the final full run passed. All SQL statements now live in
+`packages/engine/sql` or `packages/engine/schema.sql`, and the guard reads its
+patterns from `data/quality/sql_guard.yaml`. This closes P20 for Linux and the
+SQL part of P15. macOS, Windows, Android and iOS remain unverified locally.
 
 ## S6 — Flutter GUI
 
