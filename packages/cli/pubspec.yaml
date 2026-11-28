@@ -3,11 +3,11 @@ description: Terminal front-end that drives the Litzy engine through typed LMLP 
 publish_to: none
 resolution: workspace
 environment:
-  sdk: ^3.14.1
+  sdk: ^3.14.0
 dependencies:
   engine:
     path: ../engine
   protocol:
     path: ../protocol
 dev_dependencies:
-  test: ^1.33.0
+  test: ">=1.32.0 <1.33.0"

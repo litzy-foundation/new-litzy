@@ -1,50 +1,138 @@
 name: litzy
 publish_to: none
 environment:
-  sdk: ^3.14.1
+  sdk: ^3.14.0
 
 workspace:
   - packages/core
   - packages/protocol
   - packages/engine
-  - packages/cli
   - packages/security
+  - packages/l10n
+  - packages/cli
+  - packages/app
 
 dev_dependencies:
   lints: ^6.1.0
   melos: ^8.10.1
-  test: ^1.33.0
+  test: ">=1.32.0 <1.33.0"
 
 melos:
+  command:
+    run:
+      noSelect: true
   scripts:
     analyze:
+      description: Analyze every package.
+      steps:
+        - analyze:dart
+        - analyze:flutter
+    analyze:dart:
+      description: Analyze the Dart packages.
       exec: dart analyze
+      packageFilters:
+        scope:
+          - core
+          - protocol
+          - engine
+          - security
+          - l10n
+          - cli
+    analyze:flutter:
+      description: Analyze the Flutter client package.
+      exec: flutter analyze
+      packageFilters:
+        scope:
+          - app
     format:
+      description: Format every package.
       exec: dart format .
     test:
+      description: Run the Dart packages and the Flutter client tests.
+      steps:
+        - test:dart
+        - test:flutter
+        - test:binary
+    test:dart:
+      description: Run tests that use the Dart test runner.
       exec: dart test
+      packageFilters:
+        scope:
+          - core
+          - protocol
+          - engine
+          - security
+          - l10n
+          - cli
+    test:flutter:
+      description: Run the Flutter widget tests of the GUI package.
+      exec: flutter test
+      packageFilters:
+        scope:
+          - app
     test:core:
+      description: Run the core package tests.
       exec: dart test
       packageFilters:
         scope:
           - core
     test:protocol:
+      description: Run the protocol package tests.
       exec: dart test
       packageFilters:
         scope:
           - protocol
     test:engine:
+      description: Run the engine package tests.
       exec: dart test
       packageFilters:
         scope:
           - engine
     test:cli:
+      description: Run the CLI package tests.
       exec: dart test
       packageFilters:
         scope:
           - cli
     test:security:
+      description: Run the security package tests.
       exec: dart test
       packageFilters:
         scope:
           - security
+    test:l10n:
+      description: Run the localisation package tests.
+      exec: dart test
+      packageFilters:
+        scope:
+          - l10n
+    test:app:
+      description: Run the Flutter client widget tests.
+      exec: flutter test
+      packageFilters:
+        scope:
+          - app
+    test:binary:
+      description: Build and launch the shipped CLI and GUI binaries.
+      steps:
+        - build:gui-linux
+        - test:binary:cli
+        - test:binary:gui
+    build:gui-linux:
+      description: Build the Linux GUI binary used by acceptance.
+      exec: PATH="${PWD}/tool/linux_toolchain:${PATH}" flutter build linux --debug
+      packageFilters:
+        scope:
+          - app
+    test:binary:cli:
+      description: Launch the compiled CLI binary against a real profile.
+      exec: dart test binary_test/compiled_binary_test.dart --timeout 3m
+      packageFilters:
+        scope:
+          - cli
+    test:binary:gui:
+      description: Launch the compiled GUI binary against a real profile.
+      exec: flutter test binary_test/gui_binary_test.dart --timeout 3m
+      packageFilters:
+        scope:
+          - app

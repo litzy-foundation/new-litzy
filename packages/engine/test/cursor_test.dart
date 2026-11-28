@@ -265,9 +265,7 @@ void main() {
     database.close();
 
     final raw = sqlite3.open(path);
-    raw.execute(
-      "UPDATE sync_cursors SET cursor = 'not json' WHERE channel_id = 'git'",
-    );
+    raw.execute(SqlResources.statement(SqlKeys.writeInvalidCursor));
     raw.dispose();
     final reopened = LocalDatabase.open(path);
     addTearDown(reopened.close);

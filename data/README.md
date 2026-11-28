@@ -12,8 +12,10 @@ names a list, its protocol, its list identifier and the endpoints that can
 serve it. The `default.yaml` file names the catalogue and source used when a
 front-end omits those flags. The `rulesets` directory holds classification
 rules, including the newsletter defaults. The `fixtures` directory holds named
-fixtures used by tests. A `local` directory may be created for development-only
-data and is git-ignored; it never enters the repository.
+fixtures used by tests. The `quality` directory holds the detection patterns
+read by the SQL resource guard, so the guard itself stays free of statement
+text. A `local` directory may be created for development-only data and is
+git-ignored; it never enters the repository.
 
 ## Validation
 

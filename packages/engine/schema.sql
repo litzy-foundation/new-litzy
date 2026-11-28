@@ -1,3 +1,4 @@
+-- Copyright (c) 2026 Alessio Attilio and the litzy contributors
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
   list_id TEXT NOT NULL,

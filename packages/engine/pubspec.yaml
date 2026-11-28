@@ -3,7 +3,7 @@ description: Embedded Litzy engine running on a separate Dart isolate.
 publish_to: none
 resolution: workspace
 environment:
-  sdk: ^3.14.1
+  sdk: ^3.14.0
 dependencies:
   protocol:
     path: ../protocol
@@ -15,4 +15,4 @@ dependencies:
   yaml: ^3.1.4
   zstd_dart: ^1.2.0
 dev_dependencies:
-  test: ^1.33.0
+  test: ">=1.32.0 <1.33.0"

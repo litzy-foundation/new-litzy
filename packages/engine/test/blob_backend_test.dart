@@ -176,23 +176,13 @@ void main() {
     addTearDown(harness.close);
     final fixture = legacyFixture();
     final rawDatabase = harness.openRawProfile();
-    rawDatabase.execute('''
-      CREATE TABLE blobs (
-        digest TEXT PRIMARY KEY,
-        codec TEXT NOT NULL,
-        size INTEGER NOT NULL,
-        payload BLOB NOT NULL
-      )
-      ''');
-    rawDatabase.execute(
-      'INSERT INTO blobs (digest, codec, size, payload) VALUES (?, ?, ?, ?)',
-      [
-        fixture['digest'],
-        fixture['codec'],
-        fixture['size'],
-        fixture['payload'],
-      ],
-    );
+    rawDatabase.execute(SqlResources.statement(SqlKeys.createLegacyBlobs));
+    rawDatabase.execute(SqlResources.statement(SqlKeys.insertLegacyBlob), [
+      fixture['digest'],
+      fixture['codec'],
+      fixture['size'],
+      fixture['payload'],
+    ]);
     rawDatabase.dispose();
 
     final reopened = LocalDatabase.open(harness.databasePath);
@@ -213,23 +203,13 @@ void main() {
     addTearDown(harness.close);
     final fixture = legacyFixture();
     final rawDatabase = harness.openRawProfile();
-    rawDatabase.execute('''
-      CREATE TABLE blobs (
-        digest TEXT PRIMARY KEY,
-        codec TEXT NOT NULL,
-        size INTEGER NOT NULL,
-        payload BLOB NOT NULL
-      )
-      ''');
-    rawDatabase.execute(
-      'INSERT INTO blobs (digest, codec, size, payload) VALUES (?, ?, ?, ?)',
-      [
-        fixture['digest'],
-        fixture['codec'],
-        fixture['size'],
-        Uint8List.fromList([1, 2, 3, 4]),
-      ],
-    );
+    rawDatabase.execute(SqlResources.statement(SqlKeys.createLegacyBlobs));
+    rawDatabase.execute(SqlResources.statement(SqlKeys.insertLegacyBlob), [
+      fixture['digest'],
+      fixture['codec'],
+      fixture['size'],
+      Uint8List.fromList([1, 2, 3, 4]),
+    ]);
     rawDatabase.dispose();
 
     final reopened = LocalDatabase.open(harness.databasePath);

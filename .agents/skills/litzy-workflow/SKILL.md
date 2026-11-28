@@ -22,3 +22,9 @@ request is merged. Analysis at zero issues, clean formatting and green
 tests are merge conditions, not goals. Commit messages follow Conventional
 Commits and changes are atomic. Package names have no prefix and
 `pubspec.lock` is committed.
+
+The agent also runs acceptance against every binary it builds or changes,
+including the compiled GUI client, as required by R50 and ADR-0023. Widget and
+engine-backed tests do not close a binary slice. A target that cannot be
+exercised locally is recorded as unverified in the roadmap and the problem
+register.

@@ -13,3 +13,4 @@ data/local/
 .idea/
 .vscode/
 .DS_Store
+.flutter-plugins-dependencies

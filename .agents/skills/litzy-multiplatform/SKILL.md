@@ -16,4 +16,6 @@ as keychain access. Business rules stay in the engine and are reached
 through the typed protocol. iOS builds are manual on the maintainer's Apple
 machine, Android builds locally and Windows MSIX on a free hosted runner.
 Before a release, acceptance tests run the real engine on at least one
-desktop target.
+desktop target. When a binary is built for a target, the agent launches that
+binary in acceptance on the available host. Targets the agent cannot exercise
+are recorded as unverified rather than covered, as required by R50.

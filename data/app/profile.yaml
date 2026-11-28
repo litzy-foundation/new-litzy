@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Local profile defaults for the Flutter client.
+
+version: 1
+database_file: litzy.db

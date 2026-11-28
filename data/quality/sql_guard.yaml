@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Detection patterns for the R51 guard in the engine package.
+patterns:
+  - '\bPRAGMA\b'
+  - '\bSELECT\b[\s\S]*?\bFROM\b'
+  - '\bINSERT\s+INTO\b'
+  - '\bUPDATE\b[\s\S]*?\bSET\b'
+  - '\bDELETE\s+FROM\b'
+  - '\bCREATE\s+(?:VIRTUAL\s+)?TABLE\b'
+  - '\bALTER\s+TABLE\b'
+  - '\bDROP\s+TABLE\b'
+  - '\bWITH\s+RECURSIVE\b'
+  - '\bBEGIN\s+IMMEDIATE\b'
+  - '[''"](?:COMMIT|ROLLBACK)[''"]'
+  - '\bVACUUM\s+INTO\b'

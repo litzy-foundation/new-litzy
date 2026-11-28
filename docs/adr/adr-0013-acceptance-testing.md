@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted on 2026-11-28. This decision implements R27.
+Accepted on 2026-11-28. This decision implements R27. ADR-0023 extends the
+binary rule to every binary the agent builds or changes, including the GUI
+client.
 
 ## Context
 

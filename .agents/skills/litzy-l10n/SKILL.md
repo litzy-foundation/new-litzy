@@ -18,3 +18,9 @@ meaning. Do not put markup, protocol names or implementation details into a
 user-facing message. Keep the same vocabulary across the GUI and the CLI so
 that both front-ends feel like one application. Source comments and resource
 comments are English as required by R11.
+
+The `l10n` package owns the Fluent parser and typed message keys. Versioned
+resources live under `data/l10n` and are declared as Flutter assets by the
+client, so the resource file is the source of truth on every platform. Widgets
+call a typed key and never construct a sentence from fragments. A missing key
+raises a typed error instead of showing the key to a user.

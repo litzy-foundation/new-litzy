@@ -1,0 +1,4 @@
+#!/bin/sh
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Flutter 3.50 expects a compiler named clang beside clang++ on Linux.
+exec "${LITZY_CC:-cc}" "$@"
