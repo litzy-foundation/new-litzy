@@ -72,13 +72,13 @@ final class _Harness {
     directory = Directory.systemTemp.createTempSync('litzy-mode-c');
     database = LocalDatabase.inMemory();
     blobs = LocalBlobStore(directory);
-    ingestor = ModeCIngestor(database: database, blobs: blobs);
+    ingestor = ListMessageIngestor(database: database, blobs: blobs);
   }
 
   late final Directory directory;
   late final LocalDatabase database;
   late final LocalBlobStore blobs;
-  late final ModeCIngestor ingestor;
+  late final ListMessageIngestor ingestor;
 
   void close() {
     database.close();
@@ -196,7 +196,7 @@ void main() {
         _message('m1@example.invalid', 'other@example.invalid'),
       ]),
       throwsA(
-        isA<ModeCIngestException>().having(
+        isA<ListMessageIngestException>().having(
           (error) => error.code,
           'code',
           'list_id_mismatch',
@@ -218,7 +218,7 @@ void main() {
         _message('m1@example.invalid', ''),
       ]),
       throwsA(
-        isA<ModeCIngestException>().having(
+        isA<ListMessageIngestException>().having(
           (error) => error.code,
           'code',
           'missing_list_id',
@@ -240,7 +240,7 @@ void main() {
     expect(
       () => harness.ingestor.ingest(channel, messages),
       throwsA(
-        isA<ModeCIngestException>().having(
+        isA<ListMessageIngestException>().having(
           (error) => error.code,
           'code',
           'persistence_failed',

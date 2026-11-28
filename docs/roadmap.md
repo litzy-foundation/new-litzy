@@ -75,7 +75,7 @@ database, so one file is a complete backup. Both backends are selected by a
 typed field on the open request, and tests cover them through identical
 calls. Deferred: the Drift mapping that replaces the direct `sqlite3`
 statements. Drift 2.35 exposes only an async query API, while
-`LocalDatabase`, `BlobStore` and `ModeCIngestor.ingest` are synchronous, so a
+`LocalDatabase`, `BlobStore` and `ListMessageIngestor.ingest` are synchronous, so a
 faithful mapping would change the engine API and the tests that call storage
 directly. The mismatch is recorded as P10 in the problem register. The
 migration belongs in a dedicated slice that converts the storage and blob
@@ -96,7 +96,7 @@ messages with digests. Failures are explicit types for bad status codes,
 malformed documents, unsafe identifiers and timeouts. Tests drive a local
 fake NNTP server and a local HTTP fixture, and check catalogue validation.
 Landed: `ChannelMapper` turns a catalogue entry into a runtime channel that
-`LocalDatabase` persists, and `ModeCIngestor` verifies the list identifier,
+`LocalDatabase` persists, and `ListMessageIngestor` verifies the list identifier,
 the raw digest and thread references before writing messages and raw blobs.
 An end-to-end test loads the versioned catalogue, serves an atom feed and a
 gzipped mbox from a local HTTP fixture, and reads the persisted thread and
@@ -128,8 +128,13 @@ be replayed and a mailbox failure leaves it retryable. Tests cover all of
 these paths with a fake mailbox. A read-only typed `audit` verb now reports
 residual list mail, unmanaged lists and quarantined messages from a snapshot
 supplied by the front-end; the engine applies the stored policy and never
-changes a mailbox. Still to do: the real RFC-compliant IMAP client behind
-`MailboxPort` that supplies that snapshot.
+changes a mailbox. A real RFC-compliant IMAP client now implements
+`MailboxPort`, reads a message batch and supplies a typed inbox snapshot. A
+typed Mode B verb persists only messages whose list identifier matches the
+selected list, then applies the stored mailbox policy through the purge
+coordinator. TLS and credential choices are recorded in ADR-0015. Still to do:
+the CLI command, which waits for a platform keychain adapter so no password
+needs to be typed into a terminal.
 
 ## S4a — Secure configuration and OAuth
 

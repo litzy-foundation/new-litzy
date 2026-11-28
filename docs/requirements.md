@@ -340,6 +340,32 @@ R31 and ADR-0001; the pull request rule itself is unchanged. The two-parent
 merge commit whose subject names the pull request remains the historical
 evidence that every change came through a pull request.
 
+## R39 — Mode B transport, authentication and command surface
+
+For the real IMAP client the maintainer chose: "Password from keychain — Read
+the password through CredentialVault and use RFC LOGIN. OAuth XOAUTH2 can be
+added when provider adapters exist." The front-end reads the password from
+the operating system keychain and passes it only through the typed in-process
+bus to the engine. No password is written to SQLite, a versioned file, a log
+or a `.env` file. XOAUTH2 is deferred until provider adapters exist.
+
+The maintainer chose: "IMAPS 993, TLS required — Use SecureSocket by default;
+a local test fixture can opt into plain sockets." Every connection to a
+non-loopback host uses `SecureSocket` on port 993. Plain sockets are accepted
+only for a loopback test host and are rejected for any remote address.
+
+The maintainer chose: "Client plus typed Mode B verb — Add IMAP ingestion and
+mailbox snapshot behind typed verbs, so purge and audit can use the real
+client end to end." The RFC client sits behind `MailboxPort`, and the engine
+owns the connection, the fetch, the verified persistence and the stored
+mailbox policy. The front-end never speaks IMAP itself.
+
+The maintainer chose: "Defer CLI command — Land the RFC client and typed Mode
+B verb now, tested through the real engine isolate with a fake keychain
+value. Add the CLI command when a platform SecretStore adapter exists." No
+password flag, environment variable or interactive prompt is added to the CLI
+in this slice. The decision is recorded in ADR-0015.
+
 ## Open questions
 
 | # | Question | Status |

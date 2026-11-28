@@ -111,6 +111,15 @@ enum MailImportFormat {
   mbox,
 }
 
+/// Transport used to reach an IMAP server.
+enum ImapTransportSecurity {
+  /// An implicit TLS connection, which is the only remote transport.
+  tls,
+
+  /// A plain socket accepted only for loopback fixtures.
+  loopbackPlain,
+}
+
 /// One mutable flag in the local triage state.
 enum TriageState {
   /// Whether the message has been read.
@@ -183,6 +192,45 @@ final class ThreadRequest extends LmlpRequest {
 
   /// Identifier of the thread root.
   final String rootId;
+}
+
+/// Reads one list from a personal IMAP mailbox into the open profile.
+///
+/// The password is supplied by the front-end after it reads the operating
+/// system keychain. It crosses the in-process bus in memory only.
+final class ImapSyncRequest extends LmlpRequest {
+  /// Creates a Mode B sync request for [listId] at [host].
+  const ImapSyncRequest(
+    super.id, {
+    required this.host,
+    this.port = 993,
+    required this.username,
+    required this.password,
+    required this.listId,
+    this.mailbox = 'INBOX',
+    this.security = ImapTransportSecurity.tls,
+  });
+
+  /// Host name of the RFC-compliant IMAP server.
+  final String host;
+
+  /// Port on which the IMAP server listens.
+  final int port;
+
+  /// Login name supplied to the server.
+  final String username;
+
+  /// Password read from the operating system keychain by the front-end.
+  final String password;
+
+  /// List identifier that every ingested message must declare.
+  final String listId;
+
+  /// Mailbox from which list mail is read.
+  final String mailbox;
+
+  /// Transport used for the connection.
+  final ImapTransportSecurity security;
 }
 
 /// Builds and stores a quoted reply draft for one message.
@@ -312,6 +360,34 @@ final class ThreadResponse extends LmlpResponse {
 
   /// Messages in pre-order.
   final List<MessageData> messages;
+}
+
+/// Reports what one Mode B sync persisted and changed in the mailbox.
+final class ImapSyncResponse extends LmlpResponse {
+  /// Creates a Mode B response with its counts and classified identifiers.
+  const ImapSyncResponse(
+    super.id,
+    this.count,
+    this.snapshot,
+    this.action,
+    this.actedUids,
+    this.quarantined,
+  );
+
+  /// Number of new messages persisted by the sync.
+  final int count;
+
+  /// Read-only snapshot of the mailbox before any action.
+  final List<InboxMessage> snapshot;
+
+  /// Stable name of the applied policy action, or `none` when no action ran.
+  final String action;
+
+  /// Mailbox unique identifiers changed by the applied policy.
+  final List<String> actedUids;
+
+  /// Mailbox unique identifiers held in quarantine.
+  final List<String> quarantined;
 }
 
 /// Reports the quoted reply draft stored by the engine.

@@ -106,6 +106,10 @@ versioned file or a `.env` file.
     hold OAuth tokens and credentials entered in the app.
 32. GitHub-native enforcement (R38): no pre-receive hook; branch protection
     and the required `pr-guard` status check enforce the pull request flow.
+33. Mode B transport (R39): the IMAP client uses IMAPS 993 with TLS by default,
+    reads the password from the keychain through `CredentialVault` and speaks
+    RFC LOGIN. Plain sockets are limited to loopback fixtures. The typed Mode B
+    verb lands before its CLI command, which waits for a platform `SecretStore`.
 
 ## Fixed operational rules
 

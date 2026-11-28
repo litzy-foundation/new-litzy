@@ -148,6 +148,21 @@ CliResult _format(LmlpResponse response) => switch (response) {
         'quarantined': quarantined,
       }),
     ),
+  ImapSyncResponse(
+    :final count,
+    :final action,
+    :final actedUids,
+    :final quarantined,
+  ) =>
+    CliResult(
+      exitCode: 0,
+      output: jsonEncode({
+        'count': count,
+        'action': action,
+        'actedUids': actedUids,
+        'quarantined': quarantined,
+      }),
+    ),
   ErrorResponse(:final code, :final message) => CliResult(
     exitCode: 1,
     error: '$code: $message',
