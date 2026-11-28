@@ -44,5 +44,13 @@ extracted message. A catalogue entry maps to a persisted channel, and an
 end-to-end proof reads a thread from a local HTTP fixture through the real
 SQLite database. The first ingestor rejects a message whose List-Id does not
 match the channel, which implements the trust chain more strictly than
-tagging. Converting NNTP articles onto the same path and exposing sync as a
-typed verb remain in the roadmap.
+tagging. NNTP articles now convert onto the same path, and sync is a typed verb that
+lets either front-end refresh a channel.
+
+Incremental state is a cursor row keyed by channel in the local database, as
+required by ADR-0004. The NNTP cursor is the highest overview article number
+already fetched, so the next sync requests only later articles. The
+public-inbox cursor keeps the most recently seen thread identifiers, so the
+next sync still reads the small atom feed but skips the compressed mbox of a
+thread it already fetched. A cursor advances only after the batch commits,
+and a rejected batch leaves it unchanged.

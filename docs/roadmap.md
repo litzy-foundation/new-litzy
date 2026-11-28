@@ -104,8 +104,11 @@ search result from the real SQLite database. A typed `SyncRequest` now refreshes
 a named catalogue channel through either NNTP or public-inbox inside the
 engine isolate, and an NNTP article converts to the same raw message shape.
 Tests drive the real isolate path with local fake servers and check that an
-untrusted list identifier leaves no persisted message. Still to do: incremental
-cursors and an `audit` verb for residual list mail.
+untrusted list identifier leaves no persisted message. Incremental cursors now
+live in SQLite per channel: NNTP advances by article number and public-inbox
+remembers seen thread identifiers, so a repeated sync fetches no duplicate
+messages. A cursor advances only after its batch commits. Still to do: the
+`audit` verb for residual list mail.
 
 ## S4 — Mode B with opt-in purge
 
