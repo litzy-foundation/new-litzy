@@ -1,6 +1,10 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'package:protocol/protocol.dart';
 
+part 'channels_command.dart';
+part 'list_command.dart';
+part 'show_command.dart';
+
 /// Reports command-line input that cannot be mapped to a typed request.
 final class CliUsageException implements Exception {
   /// Creates a usage error with a readable [message].
@@ -27,14 +31,14 @@ final class PingCommand extends CliCommand {
 
 /// Refreshes a catalogue channel through the engine.
 final class SyncCommand extends CliCommand {
-  /// Creates a sync command for one catalogue source.
+  /// Creates a sync command with optional catalogue and source overrides.
   const SyncCommand(this.cataloguePath, this.sourceId);
 
-  /// Path of the declarative source catalogue.
-  final String cataloguePath;
+  /// Path of the declarative source catalogue, or null for the default.
+  final String? cataloguePath;
 
-  /// Stable identifier of the source to refresh.
-  final String sourceId;
+  /// Stable identifier of the source, or null for the default.
+  final String? sourceId;
 }
 
 /// Searches subjects and bodies through the full-text index.
@@ -174,11 +178,11 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
     case 'sync':
       final catalogue = options['catalogue'];
       final source = options['source'];
-      if (catalogue == null ||
-          catalogue.isEmpty ||
-          source == null ||
-          source.isEmpty) {
-        throw const CliUsageException('sync needs --catalogue and --source');
+      if (catalogue != null && catalogue.isEmpty) {
+        throw const CliUsageException('--catalogue needs a path');
+      }
+      if (source != null && source.isEmpty) {
+        throw const CliUsageException('--source needs an identifier');
       }
       if (argument != null) {
         throw const CliUsageException('sync takes no argument');
@@ -187,6 +191,30 @@ ParsedCliCommand parseCommandLine(List<String> arguments) {
         databasePath: database,
         blobsDirectory: blobs,
         command: SyncCommand(catalogue, source),
+      );
+    case 'channels':
+      if (argument != null) {
+        throw const CliUsageException('channels takes no argument');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: const ChannelsCommand(),
+      );
+    case 'list':
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: ListCommand(argument),
+      );
+    case 'show':
+      if (argument == null || argument.isEmpty) {
+        throw const CliUsageException('show needs a thread root');
+      }
+      return ParsedCliCommand(
+        databasePath: database,
+        blobsDirectory: blobs,
+        command: ShowCommand(argument),
       );
     case 'search':
       if (argument == null || argument.isEmpty) {

@@ -219,6 +219,17 @@ The path reads public data only and does not touch IMAP, SMTP or a keychain.
 Acceptance tests use the real binary, the real engine and local fixtures that
 serve an Atom feed, a gzipped mbox and an NNTP conversation.
 
+Landed: the engine resolves default catalogue and source values from
+`data/catalog/default.yaml`, so `litzy sync` reads `git@vger.kernel.org`
+without a credential prompt while `--catalogue` and `--source` remain as
+overrides. The `channels`, `list` and `show` commands list persisted channels,
+summarise topics by last activity and reconstruct one thread with parent links.
+The engine answers them with typed verbs over the same in-process contract, and
+the CLI prints structured JSON. Acceptance tests drive the real binary with
+local NNTP and public-inbox fixtures that serve a recorded article, an Atom
+feed and a gzipped mbox. Analysis is clean and all five package suites are
+green.
+
 ## S11 — Chat-like read-only GUI
 
 Create `packages/l10n` and `packages/app`, then build the read-only interface

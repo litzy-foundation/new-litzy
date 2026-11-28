@@ -55,6 +55,23 @@ Toolchains are pinned with mise. Run `dart pub get` and `dart run melos
 bootstrap` from the repository root, then `dart run melos run analyze` and
 `dart run melos run test`. Detailed commands are in `docs/development.md`.
 
+## Reading a public list
+
+The terminal client reads `git@vger.kernel.org` from the local catalogue
+without an email account, password or keychain. Each invocation opens one
+local profile, so the same database can be used by later commands.
+
+```text
+dart run cli:litzy --database git.db sync
+dart run cli:litzy --database git.db channels
+dart run cli:litzy --database git.db list git
+dart run cli:litzy --database git.db show <thread-root>
+```
+
+The sync command uses the default catalogue and source in
+`data/catalog/default.yaml`. Pass `--catalogue` and `--source` to select a
+different list or mirror. All four commands print structured JSON.
+
 ## Documentation
 
 Start from `docs/requirements.md` for the permanent directives,

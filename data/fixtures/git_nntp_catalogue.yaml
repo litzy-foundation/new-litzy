@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Local NNTP fixture for credential-free Git reading tests.
+# Implements R45 and ADR-0021.
+
+version: 1
+sources:
+  - id: git
+    label: Git development list
+    list_id: git@vger.kernel.org
+    protocols:
+      nntp:
+        host: 127.0.0.1
+        port: __PORT__
+        newsgroup: lore.git

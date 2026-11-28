@@ -1,6 +1,14 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:isolate';
 
+part 'channel_list_response.dart';
+part 'channel_view.dart';
+part 'list_channels_request.dart';
+part 'list_threads_request.dart';
+part 'show_thread_request.dart';
+part 'thread_list_response.dart';
+part 'thread_summary.dart';
+
 /// A value that may cross the in-process boundary between UI and engine.
 sealed class LmlpMessage {
   /// Creates a message.
@@ -134,14 +142,16 @@ final class OpenProfileRequest extends LmlpRequest {
 
 /// Refreshes one catalogue channel using its declared Mode C protocol.
 final class SyncRequest extends LmlpRequest {
-  /// Creates a sync request for [sourceId] in the catalogue at [cataloguePath].
+  /// Creates a sync request with optional catalogue and source overrides.
+  ///
+  /// A null path or source tells the engine to read the declarative defaults.
   const SyncRequest(super.id, this.cataloguePath, this.sourceId);
 
-  /// Path of the declarative source catalogue.
-  final String cataloguePath;
+  /// Path of the declarative source catalogue, or null for the default.
+  final String? cataloguePath;
 
-  /// Stable identifier of the source to refresh.
-  final String sourceId;
+  /// Stable identifier of the source, or null for the default.
+  final String? sourceId;
 }
 
 /// Persists one batch of messages in the open profile.

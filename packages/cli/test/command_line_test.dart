@@ -184,15 +184,46 @@ void main() {
     );
   });
 
-  test('sync requires a catalogue and a source', () {
+  test('sync can use the default catalogue and source', () {
+    final parsed = parseCommandLine(['--database', 'p.db', 'sync']);
+    final command = parsed.command as SyncCommand;
+
+    expect(command.cataloguePath, isNull);
+    expect(command.sourceId, isNull);
+  });
+
+  test('sync accepts an explicit source with the default catalogue', () {
+    final parsed = parseCommandLine([
+      '--database',
+      'p.db',
+      'sync',
+      '--source',
+      'git',
+    ]);
+    final command = parsed.command as SyncCommand;
+
+    expect(command.cataloguePath, isNull);
+    expect(command.sourceId, 'git');
+  });
+
+  test('channels, list and show are parsed as reading commands', () {
+    final channels = parseCommandLine(['--database', 'p.db', 'channels']);
+    final listed = parseCommandLine(['--database', 'p.db', 'list', 'git']);
+    final shown = parseCommandLine([
+      '--database',
+      'p.db',
+      'show',
+      'm1@example.invalid',
+    ]);
+
+    expect(channels.command, isA<ChannelsCommand>());
+    expect((listed.command as ListCommand).channelId, 'git');
+    expect((shown.command as ShowCommand).rootId, 'm1@example.invalid');
+  });
+
+  test('show needs a thread root', () {
     expect(
-      () => parseCommandLine([
-        '--database',
-        'p.db',
-        'sync',
-        '--catalogue',
-        'lists.yaml',
-      ]),
+      () => parseCommandLine(['--database', 'p.db', 'show']),
       throwsA(isA<CliUsageException>()),
     );
   });

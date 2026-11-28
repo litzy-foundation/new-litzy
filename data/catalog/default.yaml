@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Declarative defaults for a front-end that does not name a source explicitly.
+# Implements R45 and ADR-0021.
+
+version: 1
+catalogue: data/catalog/lists.yaml
+source: git

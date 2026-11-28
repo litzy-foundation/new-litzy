@@ -1,0 +1,7 @@
+Message-ID: <m1@example.invalid>
+List-Id: <git@vger.kernel.org>
+Subject: [PATCH] cover letter
+From: Author <author@example.invalid>
+Date: Mon, 28 Nov 2026 00:00:00 +0000
+
+first body line

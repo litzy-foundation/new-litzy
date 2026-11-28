@@ -159,6 +159,61 @@ final class LocalDatabase {
     );
   }
 
+  /// Returns every persisted channel ordered by its stable identifier.
+  List<ChannelRecord> get channels => _database
+      .select(
+        'SELECT id, list_id, label, protocol, endpoint FROM channels ORDER BY id',
+      )
+      .map(
+        (row) => ChannelRecord(
+          id: row['id'] as String,
+          listId: row['list_id'] as String,
+          label: row['label'] as String,
+          protocol: row['protocol'] as String,
+          endpoint: row['endpoint'] as String,
+        ),
+      )
+      .toList(growable: false);
+
+  /// Returns topic summaries, optionally limited to one persisted channel.
+  List<
+    ({
+      String rootId,
+      String listId,
+      String subject,
+      int messageCount,
+      int lastActivityEpoch,
+    })
+  >
+  threadSummaries({String? channelId}) => _database
+      .select(
+        '''
+        SELECT m.thread_root_id AS root_id,
+               m.list_id AS list_id,
+               (SELECT subject FROM messages r
+                WHERE r.thread_root_id = m.thread_root_id
+                ORDER BY r.date_epoch, r.id LIMIT 1) AS subject,
+               COUNT(*) AS message_count,
+               MAX(m.date_epoch) AS last_activity_epoch
+        FROM messages m
+        WHERE ? IS NULL OR m.list_id =
+          (SELECT list_id FROM channels WHERE id = ?)
+        GROUP BY m.thread_root_id, m.list_id
+        ORDER BY last_activity_epoch DESC, root_id
+        ''',
+        [channelId, channelId],
+      )
+      .map(
+        (row) => (
+          rootId: row['root_id'] as String,
+          listId: row['list_id'] as String,
+          subject: row['subject'] as String,
+          messageCount: row['message_count'] as int,
+          lastActivityEpoch: row['last_activity_epoch'] as int,
+        ),
+      )
+      .toList(growable: false);
+
   /// Returns one persisted message, or null when [id] is absent.
   MessageRecord? messageOf(String id) {
     final rows = _database.select('SELECT * FROM messages WHERE id = ?', [id]);
