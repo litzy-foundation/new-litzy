@@ -65,6 +65,13 @@ final class _LitzyAppState extends State<LitzyApp> {
       theme: ThemeData(
         useMaterial3: true,
         splashFactory: NoSplash.splashFactory,
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: widget.bundle.theme.accentColor)
+                .copyWith(
+                  surface: widget.bundle.theme.surfaceColor,
+                  onSurface: widget.bundle.theme.textColor,
+                  outline: widget.bundle.theme.borderColor,
+                ),
       ),
       home: ReadingShell(controller: _controller, bundle: widget.bundle),
     );

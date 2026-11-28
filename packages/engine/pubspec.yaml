@@ -5,6 +5,8 @@ resolution: workspace
 environment:
   sdk: ^3.14.0
 dependencies:
+  core:
+    path: ../core
   protocol:
     path: ../protocol
   archive: ^3.6.1

@@ -201,6 +201,40 @@ CliResult _format(LmlpResponse response) => switch (response) {
         'quarantined': quarantined,
       }),
     ),
+  DiscoverAccountResponse(:final account) => CliResult(
+    exitCode: 0,
+    output: jsonEncode({
+      'email': account.emailAddress,
+      'verified': account.verified,
+      'imap': {
+        'host': account.imap.host,
+        'port': account.imap.port,
+        'security': account.imap.security.name,
+        'authentication': account.imap.authentication.name,
+        'source': account.imap.source.name,
+      },
+      'smtp': {
+        'host': account.smtp.host,
+        'port': account.smtp.port,
+        'security': account.smtp.security.name,
+        'authentication': account.smtp.authentication.name,
+        'source': account.smtp.source.name,
+      },
+    }),
+  ),
+  ConnectAccountResponse(
+    :final accountId,
+    :final emailAddress,
+    :final authentication,
+  ) =>
+    CliResult(
+      exitCode: 0,
+      output: jsonEncode({
+        'accountId': accountId,
+        'email': emailAddress,
+        'authentication': authentication.name,
+      }),
+    ),
   ErrorResponse(:final code, :final message) => CliResult(
     exitCode: 1,
     error: '$code: $message',

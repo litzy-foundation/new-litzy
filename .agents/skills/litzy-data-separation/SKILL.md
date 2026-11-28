@@ -16,7 +16,10 @@ versioned.
 
 Files under `data/` are pure data with no logic, no imports and no secrets.
 A missing required field is an explicit startup error. The catalogue lives
-under `data/catalog`, rulesets under `data/rulesets` and fixtures under
+under `data/catalog`, rulesets under `data/rulesets`, style tokens under
+`data/ui`, discovery limits under `data/access` and fixtures under
 `data/fixtures` with descriptive names. A local ignored directory under
 `data/local` may hold development-only data that never enters the
 repository. Tests load fixtures through a helper rather than inline strings.
+An autoconfiguration policy holds limits and ports, never provider names or
+secrets, as required by ADR-0025.

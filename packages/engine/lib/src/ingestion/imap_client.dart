@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:protocol/protocol.dart';
 
 import 'local_mail_parser.dart';
@@ -295,7 +296,7 @@ final class ImapClient implements MailboxPort {
       _active = null;
       throw const ImapException('not_connected', 'connect before sending');
     }
-    socket.write('$tag $command\r\n');
+    socket.write('$tag $command${TextTokens.protocolLineEnding}');
     return pending.completer.future.timeout(
       timeout,
       onTimeout: () {
@@ -429,7 +430,7 @@ final class ImapClient implements MailboxPort {
   }
 
   static String _quote(String value, [String code = 'invalid_argument']) {
-    if (value.isEmpty || value.contains(RegExp(r'[\r\n\x00]'))) {
+    if (value.isEmpty || TextTokens.containsControlCharacter(value)) {
       throw ImapException(code, 'an IMAP argument contains control characters');
     }
     return '"${value.replaceAll(r'\', r'\\').replaceAll('"', r'\"')}"';

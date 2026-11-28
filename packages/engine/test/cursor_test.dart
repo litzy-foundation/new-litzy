@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
@@ -20,13 +21,14 @@ final class _Article {
 Future<ServerSocket> _startNntp(List<_Article> articles) async {
   final server = await ServerSocket.bind('127.0.0.1', 0);
   server.listen((socket) {
-    void send(String line) => socket.write('$line\r\n');
+    void send(String line) =>
+        socket.write('$line${TextTokens.protocolLineEnding}');
     send('200 fake news server ready');
     var buffer = '';
     socket.listen((bytes) {
       buffer += utf8.decode(bytes);
-      while (buffer.contains('\n')) {
-        final index = buffer.indexOf('\n');
+      while (buffer.contains(TextTokens.lineFeed)) {
+        final index = buffer.indexOf(TextTokens.lineFeed);
         final line = buffer.substring(0, index).trim();
         buffer = buffer.substring(index + 1);
         if (line.startsWith('GROUP')) {
@@ -39,8 +41,8 @@ Future<ServerSocket> _startNntp(List<_Article> articles) async {
             (item) => item.number >= lower,
           )) {
             send(
-              '${article.number}\tsubject\tauthor\tdate\t'
-              '<${article.id}>\t\t',
+              '${article.number}${TextTokens.horizontalTab}subject${TextTokens.horizontalTab}author${TextTokens.horizontalTab}date${TextTokens.horizontalTab}'
+              '<${article.id}>${TextTokens.horizontalTab}${TextTokens.horizontalTab}',
             );
           }
           send('.');
@@ -193,7 +195,7 @@ void main() {
     final server = await _startInbox(ids, bodies);
     addTearDown(() => server.close());
     final catalogue = harness.writeCatalogue(
-      '      public_inbox:\n'
+      '      public_inbox:${TextTokens.lineFeed}'
       '        base_url: http://127.0.0.1:${server.port}/',
     );
     final client = await harness.start();

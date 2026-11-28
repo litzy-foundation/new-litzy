@@ -153,4 +153,10 @@ final class SqlKeys {
 
   /// Writes a vacuumed copy to a path supplied by the caller.
   static const String vacuumInto = 'vacuum_into.sql';
+
+  /// Stores or replaces one connected account.
+  static const String upsertAccount = 'upsert_account.sql';
+
+  /// Reads one connected account by identifier.
+  static const String selectAccount = 'select_account.sql';
 }

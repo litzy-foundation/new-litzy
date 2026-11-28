@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Forbidden control escape sequences expressed as decimal ASCII code units.
+
+version: 1
+forbidden_sequences:
+  - [92, 110]
+  - [92, 114]
+  - [92, 116]
+  - [92, 48]
+scanned_paths:
+  - packages/core/lib
+  - packages/core/test
+  - packages/engine/lib
+  - packages/engine/test
+  - packages/l10n/lib
+  - packages/l10n/test
+  - packages/protocol/lib
+  - packages/protocol/test
+  - packages/security/lib
+  - packages/security/test
+  - packages/cli/lib
+  - packages/cli/test
+  - packages/app/lib
+  - packages/app/test

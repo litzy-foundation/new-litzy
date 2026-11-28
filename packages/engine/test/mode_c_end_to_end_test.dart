@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:test/test.dart';
 import 'package:engine/engine.dart';
 
@@ -110,7 +111,7 @@ RawMessage _message(String id, String listId) {
     'From: Author <author@example.invalid>',
     '',
     'body',
-  ].join('\n');
+  ].join(TextTokens.lineFeed);
   return RawMessage(
     headers: {
       'message-id': '<$id>',

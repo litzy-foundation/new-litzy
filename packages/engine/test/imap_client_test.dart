@@ -1,4 +1,5 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
+import 'package:core/core.dart';
 import 'package:engine/engine.dart';
 import 'package:protocol/protocol.dart';
 import 'package:test/test.dart';
@@ -59,7 +60,10 @@ void main() {
       messages.first.rawMessage.headers['list-id'],
       '<git@vger.kernel.org>',
     );
-    expect(messages.first.rawMessage.body, 'first body line\n');
+    expect(
+      messages.first.rawMessage.body,
+      'first body line${TextTokens.lineFeed}',
+    );
     expect(snapshot.map((message) => message.messageId), [
       'list@example.invalid',
       'personal@example.invalid',
@@ -191,7 +195,9 @@ void main() {
     final client = await _connect(fixture);
 
     await expectLater(
-      client.moveToFolder(['7'], 'Litzy\r\nUID EXPUNGE 1'),
+      client.moveToFolder([
+        '7',
+      ], 'Litzy${TextTokens.protocolLineEnding}UID EXPUNGE 1'),
       throwsA(
         isA<ImapException>().having(
           (error) => error.code,

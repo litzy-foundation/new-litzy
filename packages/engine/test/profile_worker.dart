@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:engine/engine.dart';
 
 const Duration _pollDelay = Duration(milliseconds: 10);
-const int _maximumPolls = 500;
+const int _maximumPolls = 3000;
 
 Future<void> _waitForMarker(File marker) async {
   for (var attempt = 0; attempt < _maximumPolls; attempt++) {

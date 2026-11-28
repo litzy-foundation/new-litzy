@@ -1,4 +1,6 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
+import 'package:core/core.dart';
+
 import '../storage/local_database.dart';
 
 /// Reports why a reply draft could not be prepared.
@@ -53,10 +55,12 @@ final class DraftService {
         ? original.subject
         : 'Re: ${original.subject}';
     final quoted = original.body
-        .split('\n')
-        .map((line) => '> $line')
-        .join('\n');
-    final prepared = '$written\n\nOn ${original.fromAddress} wrote:\n$quoted';
+        .split(TextTokens.lineFeed)
+        .map((line) => '${TextTokens.quoteMarker} $line')
+        .join(TextTokens.lineFeed);
+    final prepared =
+        '$written${TextTokens.lineFeed}${TextTokens.lineFeed}'
+        'On ${original.fromAddress} wrote:${TextTokens.lineFeed}$quoted';
     final draftId = 'draft:$messageId';
     database.saveDraft(
       draftId,

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Alessio Attilio and the litzy contributors
 import 'dart:io';
 
+import 'package:core/core.dart';
 import 'package:engine/engine.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
@@ -27,7 +28,7 @@ Directory _litzyRoot() {
 /// Removes block and line comments before the inline statement check.
 String _withoutComments(String source) => source
     .replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '')
-    .replaceAll(RegExp(r'//[^\n]*'), '');
+    .replaceAll(RegExp('//[^${TextTokens.lineFeed}]*'), '');
 
 /// Reads detection patterns from declarative configuration.
 List<RegExp> _patterns(Directory root) {
