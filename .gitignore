@@ -1,5 +1,6 @@
 .dart_tool/
 build/
+packages/app/data/
 .packages
 .pub-cache/
 *.log

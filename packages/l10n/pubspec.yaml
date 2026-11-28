@@ -1,0 +1,8 @@
+name: l10n
+description: Fluent message catalogue for Litzy front-ends.
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.14.0
+dev_dependencies:
+  test: ">=1.32.0 <1.33.0"

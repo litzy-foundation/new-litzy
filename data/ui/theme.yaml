@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Theme tokens used by the read-only Litzy client.
+
+version: 1
+monospace_font: monospace
+diff_color: "#FF1B5E20"
+quote_color: "#FF607D8B"

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Adaptive layout values for the read-only Litzy client.
+
+version: 1
+desktop_min_width: 1100
+channel_pane_width: 240
+thread_pane_width: 420
+thread_indent: 24
+card_padding: 8

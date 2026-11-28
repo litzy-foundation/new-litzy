@@ -1,5 +1,6 @@
 [tools]
 dart = "3.14.1"
+flutter = "3.50.1"
 
 [env]
 LITZY_LOG_LEVEL = "info"

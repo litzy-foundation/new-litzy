@@ -18,6 +18,7 @@ export 'src/ingestion/local_import_service.dart';
 export 'src/ingestion/local_mail_parser.dart';
 export 'src/ingestion/mailbox_action.dart';
 export 'src/ingestion/mailbox_port.dart';
+export 'src/ingestion/message_headers.dart';
 export 'src/ingestion/mode_b_sync_service.dart';
 export 'src/ingestion/mode_c_sync_service.dart';
 export 'src/ingestion/nntp_client.dart';

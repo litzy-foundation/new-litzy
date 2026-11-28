@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Alessio Attilio and the litzy contributors
+# Subject markers recognised by the read-only Litzy client.
+
+version: 1
+patch_prefixes:
+  - "[PATCH"

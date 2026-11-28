@@ -241,6 +241,25 @@ is not active until S8, but its To and Cc preview shape is defined now. Tests
 check adaptive layout, thread navigation and that no user-visible string is
 hardcoded.
 
+ADR-0022 fixes the package boundary and the presentation rules before code.
+The client reaches the engine through a `ReadingSource` port implemented by
+`EngineReadingSource`, while widgets receive immutable state from a
+`ReadingController`. Layout, theme and subject markers are declarative YAML
+assets. The slice is landed. `packages/l10n` parses the Fluent resource, and
+`packages/app` renders channels, topics and conversations with localized labels,
+folded citations, monospace diffs and declarative patch prefixes. A test
+rejects literal text in widget constructors and label properties. Widget tests
+cover the desktop and mobile layouts and navigation from a fake source. One
+widget test opens the real engine isolate and SQLite database from the recorded
+Git thread and reads the reconstructed conversation without a credential;
+isolate calls run through `tester.runAsync` because Flutter test scheduling
+otherwise stalls them. Profile paths resolve inside platform support
+directories, and transport, timeout and unknown failures become typed localized
+errors. Formatting is clean,
+Dart and Flutter analysis report no issues, and the full Dart and Flutter suites
+are green. A compiled GUI binary is not built in this slice, so packaged
+acceptance on a desktop target remains open.
+
 ## S12 — Import, export and automatic transfer
 
 Add explicit import and export of profile data plus declarative automatic

@@ -1,0 +1,38 @@
+// Copyright (c) 2026 Alessio Attilio and the litzy contributors
+import 'package:engine/engine.dart';
+import 'package:flutter/widgets.dart';
+import 'package:protocol/protocol.dart';
+
+import 'app.dart';
+
+/// Starts the Flutter client with a real in-process engine.
+Future<void> main() async {
+  late final AppBundle bundle;
+  late final LmlpEngine engine;
+  var engineStarted = false;
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    bundle = await AppBundle.load();
+    final profilePath = await resolveProfilePath(bundle.profile.databasePath);
+    final started = await EngineClient.start();
+    engine = started;
+    engineStarted = true;
+    final opened = await started.send(
+      OpenProfileRequest(AppRequestKeys.openProfile, profilePath),
+    );
+    if (opened is ErrorResponse) throw ReadingFailure(opened.code);
+    if (opened is! AckResponse) {
+      throw const ReadingFailure(AppRequestKeys.unexpectedResponse);
+    }
+  } on Object catch (error) {
+    if (engineStarted) await engine.close();
+    throw mapReadingFailure(error);
+  }
+  runApp(
+    LitzyApp(
+      engine: engine,
+      source: EngineReadingSource(engine),
+      bundle: bundle,
+    ),
+  );
+}

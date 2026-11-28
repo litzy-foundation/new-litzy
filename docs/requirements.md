@@ -445,7 +445,8 @@ monospace with clear colour, selection can be quoted into the composer, and
 sending uses Ctrl+Enter with a visible To and Cc preview rather than a bare
 Enter. The maintainer added "conferme a non finire poi": the interface must
 be defined once and then implemented, without repeated confirmation loops.
-The decision is in ADR-0020.
+The decision is in ADR-0020 and its first read-only implementation is recorded
+in ADR-0022.
 
 ## R47 — Clean local code conventions
 
